@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>So Sánh Giá NCC — Điện Máy Tín Phát</title>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b23; --panel2:#1c2330; --line:#2a3242;
+  --text:#dfe6f0; --dim:#8b96a8;
+  --up:#ff6b6b; --down:#4ade80; --new:#60a5fa; --gone:#f59e0b; --note:#c084fc; --back:#2dd4bf;
+  --accent:#ffb84d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:19px;color:var(--accent);letter-spacing:.5px}
+header .sub{color:var(--dim);font-size:12px}
+.container{max-width:1400px;margin:0 auto;padding:16px 24px 60px}
+
+/* Tabs */
+.ncc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.ncc-tab{padding:9px 12px 9px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;color:var(--dim);font-size:13px;user-select:none;display:flex;align-items:center;gap:6px}
+.ncc-tab:hover{border-color:var(--accent)}
+.ncc-tab.active{background:var(--accent);color:#1a1200;font-weight:700;border-color:var(--accent)}
+.ncc-tab .dot{width:7px;height:7px;border-radius:50%;background:var(--down)}
+.ncc-tab .pencil{opacity:.45;font-size:11px;padding:2px 3px;border-radius:4px}
+.ncc-tab .pencil:hover{opacity:1;background:rgba(0,0,0,.15)}
+.ncc-tab input{background:rgba(255,255,255,.9);border:1px solid var(--accent);border-radius:5px;color:#111;font:inherit;width:100px;text-align:center;outline:none;padding:1px 4px}
+.ncc-tab.tab-tong{background:var(--panel2);border-color:var(--accent);color:var(--accent);font-weight:700}
+.ncc-tab.tab-tong.active{background:var(--accent);color:#1a1200}
+
+/* Paste area */
+.paste-wrap{display:grid;grid-template-columns:1fr 46px 1fr;gap:0;align-items:stretch;margin-bottom:14px}
+.paste-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.paste-box .pb-head{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.paste-box .pb-head b{font-size:13px;white-space:nowrap}
+.paste-box .pb-head input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:4px 8px;width:80px;font-size:12px;text-align:center}
+.btn-paste{background:var(--panel2);border:1px solid var(--accent);color:var(--accent);border-radius:7px;padding:5px 12px;font-size:12.5px;cursor:pointer;font-weight:700;white-space:nowrap}
+.btn-paste:hover{background:var(--accent);color:#1a1200}
+.paste-box textarea{flex:1;min-height:240px;background:transparent;border:none;resize:vertical;color:var(--text);padding:12px 14px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;outline:none}
+.paste-box .pb-foot{padding:6px 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--line)}
+.mid-arrow{display:flex;align-items:center;justify-content:center}
+.old-box .pb-head b{color:var(--dim)}
+.new-box{border-color:#3a4a66}
+
+.btn-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+button.act{background:var(--accent);color:#1a1200;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer}
+button.act:hover{filter:brightness(1.1)}
+button.ghost{background:var(--panel);color:var(--dim);border:1px solid var(--line);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:13px}
+button.ghost:hover{color:var(--text)}
+.swap-btn{background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px}
+
+/* Rules */
+.rules-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.rules-box h3{padding:10px 16px;font-size:13.5px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.rules-box h3 .cnt{margin-left:auto;color:var(--dim);font-size:12px;font-weight:400}
+.rules-body{border-top:1px solid var(--line);padding:12px 16px}
+.rules-hint{color:var(--dim);font-size:12px;margin-bottom:10px;line-height:1.55}
+.rules-table{width:auto;min-width:480px}
+.rules-table th{font-size:11px}
+.rules-table td{padding:4px 8px;border-top:none}
+.rules-table input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:6px 10px;font-size:13px;width:160px;outline:none}
+.rules-table input.rv{width:100px;text-align:right;font-family:Consolas,monospace}
+.rules-table input:focus{border-color:var(--accent)}
+.rule-del{background:none;border:none;color:var(--up);cursor:pointer;font-size:15px;padding:2px 6px}
+.btn-addrule{background:var(--panel2);border:1px dashed var(--line);color:var(--dim);border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12.5px;margin-top:6px}
+.btn-addrule:hover{color:var(--accent);border-color:var(--accent)}
+.real-price{color:var(--dim);font-size:11.5px}
+
+/* Chips + modules */
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;text-align:center;min-width:96px;cursor:pointer}
+.chip .num{font-size:22px;font-weight:800}
+.chip .lbl{font-size:11px;color:var(--dim);margin-top:2px}
+.chip.c-new .num{color:var(--new)} .chip.c-gone .num{color:var(--gone)}
+.chip.c-up .num{color:var(--up)} .chip.c-down .num{color:var(--down)}
+.chip.c-note .num{color:var(--note)} .chip.c-back .num{color:var(--back)}
+.module{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.module h3{padding:11px 16px;font-size:14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.module h3 .cnt{margin-left:auto;background:var(--panel2);border-radius:20px;padding:2px 10px;font-size:12px;color:var(--dim)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--panel2);color:var(--dim);text-align:left;padding:8px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:7px 12px;border-top:1px solid var(--line);vertical-align:top}
+td.code{font-family:Consolas,monospace;font-weight:700;white-space:nowrap}
+td.num{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
+.delta-up{color:var(--up);font-weight:700} .delta-down{color:var(--down);font-weight:700}
+.tag{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700}
+.tag-up{background:rgba(255,107,107,.15);color:var(--up)} .tag-down{background:rgba(74,222,128,.13);color:var(--down)}
+.tag-new{background:rgba(96,165,250,.15);color:var(--new)} .tag-gone{background:rgba(245,158,11,.15);color:var(--gone)}
+.empty{padding:16px;color:var(--dim);font-size:13px;text-align:center}
+.old-note{color:var(--dim);text-decoration:line-through}
+.hidden{display:none}
+.insight{background:var(--panel2);border-left:3px solid var(--accent);padding:10px 14px;margin:10px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.badge-ncc{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 8px;font-size:11px;color:var(--accent);margin-right:4px}
+.filter-row{padding:10px 16px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.filter-row input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px 12px;font-size:13px;flex:1;min-width:180px;outline:none}
+@media(max-width:900px){.paste-wrap{grid-template-columns:1fr}.mid-arrow{transform:rotate(90deg);padding:6px 0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ SO SÁNH GIÁ NCC</h1>
+  <span class="sub">Điện Máy Tín Phát · Giá đơn vị: nghìn đồng (K) · Bấm ✏️ trên tab để đổi tên NCC</span>
+</header>
+<div class="container">
+
+  <div class="ncc-tabs" id="nccTabs"></div>
+
+  <div id="nccArea">
+    <!-- Bảng quy tắc -->
+    <div class="rules-box">
+      <h3 onclick="toggleRules()">⚙️ Quy tắc điều chỉnh giá — <span id="rulesNccName"></span><span class="cnt" id="rulesCnt"></span><span id="rulesArrow">▸</span></h3>
+      <div class="rules-body hidden" id="rulesBody">
+        <div class="rules-hint">
+          Nếu <b>ghi chú</b> của mã chứa từ khóa ở cột A → giá thực = giá niêm yết <b>trừ</b> giá trị ở cột B.<br>
+          VD: <code>KM → 100</code> nghĩa là mã có ghi chú chứa "KM" sẽ trừ 100K. Muốn <b>cộng</b> thì điền số âm (VD: -50).
+          Mọi so sánh Tăng/Giảm đều dùng <b>giá thực</b> sau điều chỉnh. Quy tắc áp dụng riêng cho từng NCC.
+        </div>
+        <table class="rules-table">
+          <thead><tr><th>A · Từ khóa trong ghi chú</th><th>B · Trừ (K)</th><th></th></tr></thead>
+          <tbody id="rulesRows"></tbody>
+        </table>
+        <button class="btn-addrule" onclick="addRule()">＋ Thêm quy tắc</button>
+        <button class="btn-addrule" onclick="copyRulesToAll()">📋 Áp dụng bộ quy tắc này cho tất cả NCC</button>
+      </div>
+    </div>
+
+    <div class="paste-wrap">
+      <div class="paste-box old-box">
+        <div class="pb-head">
+          <b>📄 Ngày cũ</b>
+          <input id="lblOld" placeholder="15/07">
+          <button class="btn-paste" onclick="pasteInto('txtOld')">📋 Dán</button>
+        </div>
+        <textarea id="txtOld" placeholder="Paste bảng giá ngày cũ (hoặc bấm nút 📋 Dán)...&#10;&#10;Mỗi dòng: MÃ  GIÁ  GHI CHÚ"></textarea>
+        <div class="pb-foot" id="footOld">0 dòng · 0 mã</div>
+      </div>
+      <div class="mid-arrow"><button class="swap-btn" onclick="swapSides()" title="Đảo 2 bên">⇄</button></div>
+      <div class="paste-box new-box">
+        <div class="pb-head">
+          <b>📄 Ngày mới</b>
+          <input id="lblNew" placeholder="16/07">
+          <button class="btn-paste" onclick="pasteInto('txtNew')">📋 Dán</button>
+        </div>
+        <textarea id="txtNew" placeholder="Paste bảng giá ngày mới..."></textarea>
+        <div class="pb-foot" id="footNew">0 dòng · 0 mã</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="act" onclick="analyze()">🔍 So sánh</button>
+      <button class="ghost" onclick="clearCurrent()">Xoá NCC này</button>
+      <button class="ghost" onclick="analyzeAll()">⚡ Phân tích lại tất cả</button>
+    </div>
+
+    <div id="resultArea" class="hidden">
+      <div class="chips" id="chips"></div>
+      <div id="modules"></div>
+    </div>
+  </div>
+
+  <div id="tongArea" class="hidden">
+    <div class="module"><h3>🧠 Nhận định tổng hợp</h3><div id="insights"></div></div>
+    <div class="module">
+      <h3>💥 Model biến động giá mạnh nhất (giá thực, tất cả NCC)<span class="cnt" id="cntVol"></span></h3>
+      <table><thead><tr><th>Mã</th><th>NCC</th><th style="text-align:right">Giá cũ</th><th style="text-align:right">Giá mới</th><th style="text-align:right">Δ</th><th style="text-align:right">%</th></tr></thead>
+      <tbody id="tbVol"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>🚫 Model bị bỏ / hết hàng nhiều NCC<span class="cnt" id="cntGoneAll"></span></h3>
+      <table><thead><tr><th>Mã</th><th>Số NCC bỏ</th><th>Các NCC</th></tr></thead><tbody id="tbGoneAll"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>🔎 Tra cứu mã trên tất cả NCC</h3>
+      <div class="filter-row"><input id="lookupInput" placeholder="Nhập mã (VD: 9CBA, 12CTP...)" oninput="lookup()"></div>
+      <table><thead><tr><th>Mã</th><th>NCC</th><th style="text-align:right">Giá cũ</th><th style="text-align:right">Giá mới</th><th>Trạng thái</th><th>Ghi chú mới</th></tr></thead>
+      <tbody id="tbLookup"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>📊 Tổng quan từng NCC</h3>
+      <table><thead><tr><th>NCC</th><th style="text-align:right">Mã cũ</th><th style="text-align:right">Mã mới</th><th style="text-align:right">➕ Mới</th><th style="text-align:right">🚫 Bỏ</th><th style="text-align:right">📈 Tăng</th><th style="text-align:right">📉 Giảm</th><th style="text-align:right">📝 Đổi ghi chú</th></tr></thead>
+      <tbody id="tbOverview"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const N_SLOTS = 10;
+const DEFAULT_NAMES = ["Trung Xuân","Văn Quân","Thăng Long","NCC 179","Tuấn Ngoan","NCC 6","NCC 7","NCC 8","NCC 9","NCC 10"];
+// gợi ý quy tắc sẵn theo NCC quen thuộc
+const DEFAULT_RULES = {
+  0:[{k:"Quà",v:200}],
+  2:[{k:"FT90",v:500},{k:"FT75",v:200},{k:"FT50",v:100}],
+  3:[{k:"KM",v:1000},{k:"FT75",v:200},{k:"FT50",v:100}]
+};
+const state = DEFAULT_NAMES.map((n,i)=>({name:n, old:"", nw:"", lblOld:"", lblNew:"", result:null,
+  rules:(DEFAULT_RULES[i]||[]).map(r=>({...r}))}));
+let cur = 0;
+
+const $ = id => document.getElementById(id);
+const fmt = n => n==null?"":Number.isInteger(n)?n.toLocaleString("vi-VN"):n.toLocaleString("vi-VN",{maximumFractionDigits:1});
+
+/* ---------- Parser ---------- */
+function parsePrice(tok){
+  if(/[a-zA-Z]/.test(tok)) return null;            // token có chữ cái → không phải giá
+  tok = tok.replace(/^[^\d]+/,"").replace(/[^\d]+$/,""); // bỏ emoji/ký hiệu bám 2 đầu (VD: 43,000💥)
+  if(!tok) return null;
+  const clean = tok.replace(/[.,](?=\d{3}\b)/g,"").replace(",",".");
+  if(!/^\d+(\.\d+)?$/.test(clean)) return null;
+  let v = parseFloat(clean);
+  if(v >= 100000) v = Math.round(v/1000);
+  return v;
+}
+// Dòng dính liền không dấu cách: "RF677WI(XK)13,500" → tách mã + giá
+function splitGlued(line){
+  const m = line.match(/^(.*?[^\d.,\s])((?:\d{1,3}(?:[.,]\d{3})+|\d{3,})(?:[^\w\s]*)?)$/u);
+  if(!m) return null;
+  const p = parsePrice(m[2]);
+  if(p===null || p<100) return null;
+  return {code:m[1].replace(/[:\-–—=.,;]+$/,"").trim().toUpperCase(), price:p, note:""};
+}
+function applyRules(price, note, rules){
+  let real = price; const hits=[];
+  const low = (note||"").toLowerCase();
+  rules.forEach(r=>{
+    if(r.k && low.includes(r.k.toLowerCase())){ real -= r.v; hits.push(r.k+"−"+r.v); }
+  });
+  return {real, hits};
+}
+function parseList(text, rules){
+  const map = new Map(); let lines = 0;
+  const skipped = [], ambiguous = [];   // dòng bị bỏ qua / nghi vấn — để người kiểm tra
+  text.split(/\r?\n/).forEach((raw, li)=>{
+    const line = raw.trim(); if(!line) return;
+    const toks = line.split(/[\t ]+/);
+    if(toks.length < 2){
+      const g1 = splitGlued(line);
+      if(g1 && g1.code){
+        const {real, hits} = applyRules(g1.price, g1.note, rules||[]);
+        lines++;
+        const entry = {price:g1.price, real, note:g1.note, hits};
+        if(map.has(g1.code)){ const e=map.get(g1.code); e.dups=e.dups||[]; e.dups.push(entry); }
+        else map.set(g1.code, entry);
+        return;
+      }
+      if(/\d{3,}/.test(line)) skipped.push({ln:li+1, line});
+      return;
+    }
+    // tìm TẤT CẢ ứng viên giá (số >= 100)
+    const cands = [];
+    for(let i=1;i<toks.length;i++){
+      const p = parsePrice(toks[i]);
+      if(p!==null && p>=100) cands.push({i, p});
+    }
+    if(!cands.length){
+      // Thử tách dòng dính liền (VD: RF677WI(XK)13,500)
+      const g = splitGlued(line);
+      if(g && g.code){
+        const {real, hits} = applyRules(g.price, g.note, rules||[]);
+        lines++;
+        const entry = {price:g.price, real, note:g.note, hits};
+        if(map.has(g.code)){ const e=map.get(g.code); e.dups=e.dups||[]; e.dups.push(entry); }
+        else map.set(g.code, entry);
+        return;
+      }
+      // có chữ + có số lớn nhưng không đọc được giá → KHÔNG bỏ qua âm thầm, đưa vào danh sách kiểm tra
+      if(/\d{3,}/.test(line)) skipped.push({ln:li+1, line});
+      return; // dòng tiêu đề/danh mục thật sự thì bỏ qua bình thường
+    }
+    const priceIdx = cands[0].i, price = cands[0].p;
+    // NGHI VẤN 1: có 2 số lớn đứng sát nhau ngay đầu → khả năng mã chứa số bị nhận nhầm là giá
+    // NGHI VẤN 2: giá được chọn nhỏ bất thường (<1000) trong khi phía sau có số lớn gấp ≥4 lần
+    //             → khả năng số trong TÊN MÃ bị nhận nhầm là giá (VD: LG 256 QNED 5250)
+    const susAdjacent = cands.length>1 && cands[1].i === priceIdx+1 && priceIdx <= 2;
+    const susSmall = price<1000 && cands.some(c=>c.i>priceIdx && c.p >= price*4);
+    if(susAdjacent || susSmall){
+      ambiguous.push({ln:li+1, line, chosen:price});
+    }
+    const code = toks.slice(0,priceIdx)
+      .filter(t=>!/^[:\-–—=>|.]+$/.test(t))        // bỏ token thuần dấu phân cách (":", "-", "=")
+      .join(" ").replace(/[:\-–—=.,;]+$/,"")        // bỏ dấu dính cuối mã ("43A5:" → "43A5")
+      .trim().toUpperCase();
+    if(!code) return;
+    const note = toks.slice(priceIdx+1).join(" ");
+    const {real, hits} = applyRules(price, note, rules||[]);
+    lines++;
+    const entry = {price, real, note, hits};
+    if(map.has(code)){ const e=map.get(code); e.dups=e.dups||[]; e.dups.push(entry); }
+    else map.set(code, entry);
+  });
+  return {map, lines, skipped, ambiguous};
+}
+// So sánh ghi chú: bỏ khoảng trắng, gạch, dấu chấm/chấm lửng, dấu câu và EMOJI trang trí (💥🔥⚡✨❗️...) — chỉ so nội dung chữ/số thật
+const normNote = n => (n||"").replace(/[\s\-–—.…,;:!?~*•"'`]+/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/gu,"").toLowerCase();
+
+/* ---------- Compare (dùng giá THỰC) ---------- */
+function compare(oldText,newText,rules){
+  const O = parseList(oldText,rules), N = parseList(newText,rules);
+  const r = {newCodes:[],gone:[],up:[],down:[],noteChg:[],dups:[],oldCount:O.map.size,newCount:N.map.size,oldMap:O.map,newMap:N.map,
+             issues:{oldSkipped:O.skipped,newSkipped:N.skipped,oldAmb:O.ambiguous,newAmb:N.ambiguous}};
+  N.map.forEach((v,code)=>{
+    if(!O.map.has(code)) r.newCodes.push({code,...v});
+    else{
+      const o = O.map.get(code);
+      const d = v.real - o.real;
+      if(d>0) r.up.push({code,oldP:o.real,newP:v.real,oldList:o.price,newList:v.price,d,note:v.note,hits:v.hits});
+      else if(d<0) r.down.push({code,oldP:o.real,newP:v.real,oldList:o.price,newList:v.price,d,note:v.note,hits:v.hits});
+      else if(normNote(o.note)!==normNote(v.note)) r.noteChg.push({code,price:v.real,oldNote:o.note,newNote:v.note});
+    }
+    if(v.dups) r.dups.push({code,main:v,dups:v.dups});
+  });
+  O.map.forEach((v,code)=>{ if(!N.map.has(code)) r.gone.push({code,...v}); });
+  const byAbs=(a,b)=>Math.abs(b.d)-Math.abs(a.d);
+  r.up.sort(byAbs); r.down.sort(byAbs);
+  return r;
+}
+
+/* ---------- Tabs (click = chọn; ✏️ = đổi tên) ---------- */
+function renderTabs(){
+  const wrap = $("nccTabs"); wrap.innerHTML="";
+  state.forEach((s,i)=>{
+    const t = document.createElement("div");
+    t.className = "ncc-tab"+(cur===i?" active":"");
+    const name = document.createElement("span");
+    name.textContent = s.name;
+    t.appendChild(name);
+    if(s.result){ const d=document.createElement("span"); d.className="dot"; t.appendChild(d); }
+    const pen = document.createElement("span");
+    pen.className="pencil"; pen.textContent="✏️"; pen.title="Đổi tên";
+    pen.onclick = e=>{
+      e.stopPropagation();
+      const inp = document.createElement("input");
+      inp.value = s.name;
+      t.replaceChild(inp, name);
+      inp.focus(); inp.select();
+      const done = ()=>{ s.name = inp.value.trim()||("NCC "+(i+1)); renderTabs(); renderRulesHeader(); renderTongIfActive(); };
+      inp.onblur = done;
+      inp.onkeydown = ev=>{ if(ev.key==="Enter") inp.blur(); if(ev.key==="Escape"){inp.value=s.name;inp.blur();} };
+    };
+    t.appendChild(pen);
+    t.onclick = ()=>{ saveCurrent(); cur=i; renderTabs(); showNcc(); };
+    wrap.appendChild(t);
+  });
+  const tg = document.createElement("div");
+  tg.className = "ncc-tab tab-tong"+(cur===N_SLOTS?" active":"");
+  tg.textContent = "📊 TỔNG HỢP";
+  tg.onclick = ()=>{ saveCurrent(); cur=N_SLOTS; renderTabs(); showTong(); };
+  wrap.appendChild(tg);
+}
+
+/* ---------- Rules UI ---------- */
+let rulesOpen = false;
+function toggleRules(){ rulesOpen=!rulesOpen; $("rulesBody").classList.toggle("hidden",!rulesOpen); $("rulesArrow").textContent = rulesOpen?"▾":"▸"; }
+function renderRulesHeader(){
+  if(cur>=N_SLOTS) return;
+  $("rulesNccName").textContent = state[cur].name;
+  const n = state[cur].rules.filter(r=>r.k).length;
+  $("rulesCnt").textContent = n? n+" quy tắc đang bật · " : "chưa có quy tắc · ";
+}
+function renderRules(){
+  if(cur>=N_SLOTS) return;
+  const tb = $("rulesRows"); tb.innerHTML="";
+  state[cur].rules.forEach((r,idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input placeholder="VD: KM, FT50, Quà" value="${r.k||""}"></td>
+      <td><input class="rv" type="number" placeholder="100" value="${r.v??""}"></td>
+      <td><button class="rule-del" title="Xoá">✕</button></td>`;
+    const [ki,vi] = tr.querySelectorAll("input");
+    ki.oninput = ()=>{ r.k = ki.value.trim(); renderRulesHeader(); };
+    vi.oninput = ()=>{ r.v = parseFloat(vi.value)||0; };
+    tr.querySelector(".rule-del").onclick = ()=>{ state[cur].rules.splice(idx,1); renderRules(); renderRulesHeader(); };
+    tb.appendChild(tr);
+  });
+  renderRulesHeader();
+}
+function addRule(){ state[cur].rules.push({k:"",v:0}); renderRules(); if(!rulesOpen) toggleRules(); }
+function copyRulesToAll(){
+  const src = state[cur].rules.filter(r=>r.k);
+  if(!src.length){ alert("NCC này chưa có quy tắc nào để áp dụng."); return; }
+  if(!confirm("Ghi đè bộ quy tắc hiện tại của TẤT CẢ NCC bằng bộ quy tắc này?")) return;
+  state.forEach((s,i)=>{ if(i!==cur) s.rules = src.map(r=>({...r})); });
+  alert("Đã áp dụng cho tất cả NCC. Bấm ⚡ Phân tích lại tất cả để cập nhật kết quả.");
+}
+
+/* ---------- Show / save ---------- */
+function saveCurrent(){
+  if(cur>=N_SLOTS) return;
+  const s = state[cur];
+  s.old=$("txtOld").value; s.nw=$("txtNew").value;
+  s.lblOld=$("lblOld").value; s.lblNew=$("lblNew").value;
+}
+function showNcc(){
+  $("nccArea").classList.remove("hidden"); $("tongArea").classList.add("hidden");
+  const s = state[cur];
+  $("txtOld").value=s.old; $("txtNew").value=s.nw;
+  $("lblOld").value=s.lblOld; $("lblNew").value=s.lblNew;
+  renderRules(); updateFoot();
+  if(s.result) renderResult(s.result); else $("resultArea").classList.add("hidden");
+}
+function showTong(){ $("nccArea").classList.add("hidden"); $("tongArea").classList.remove("hidden"); renderTong(); }
+function renderTongIfActive(){ if(cur===N_SLOTS) renderTong(); }
+function updateFoot(){
+  ["Old","New"].forEach(k=>{
+    const p = parseList($("txt"+k).value, cur<N_SLOTS?state[cur].rules:[]);
+    const warn = p.skipped.length+p.ambiguous.length;
+    $("foot"+k).innerHTML = p.lines+" dòng · "+p.map.size+" mã" +
+      (warn? ` · <span style="color:var(--up);font-weight:700">⚠️ ${warn} dòng cần kiểm tra</span>`:"");
+  });
+}
+$("txtOld").addEventListener("input",updateFoot);
+$("txtNew").addEventListener("input",updateFoot);
+
+/* ---------- Nút Dán ---------- */
+async function pasteInto(id){
+  try{
+    const text = await navigator.clipboard.readText();
+    if(!text){ alert("Clipboard trống."); return; }
+    $(id).value = text; updateFoot(); saveCurrent();
+  }catch(e){
+    alert("Trình duyệt chặn đọc clipboard. Hãy cho phép quyền, hoặc dán thủ công (Ctrl+V).");
+  }
+}
+function swapSides(){
+  const a=$("txtOld").value,b=$("txtNew").value;
+  $("txtOld").value=b; $("txtNew").value=a;
+  const la=$("lblOld").value,lb=$("lblNew").value;
+  $("lblOld").value=lb; $("lblNew").value=la;
+  updateFoot();
+}
+function clearCurrent(){
+  $("txtOld").value=$("txtNew").value=$("lblOld").value=$("lblNew").value="";
+  state[cur].result=null; saveCurrent(); updateFoot();
+  $("resultArea").classList.add("hidden"); renderTabs();
+}
+
+/* ---------- Phân tích ---------- */
+function analyze(){
+  saveCurrent();
+  const s = state[cur];
+  if(!s.old.trim()||!s.nw.trim()){ alert("Cần paste đủ cả 2 bảng giá (ngày cũ + ngày mới)."); return; }
+  s.result = compare(s.old,s.nw,s.rules);
+  renderResult(s.result); renderTabs();
+}
+function analyzeAll(){
+  saveCurrent();
+  state.forEach(s=>{ if(s.old.trim()&&s.nw.trim()) s.result=compare(s.old,s.nw,s.rules); });
+  renderTabs();
+  if(cur<N_SLOTS && state[cur].result) renderResult(state[cur].result);
+  else if(cur===N_SLOTS) renderTong();
+}
+
+function renderResult(r){
+  $("resultArea").classList.remove("hidden");
+  $("chips").innerHTML = `
+    <div class="chip"><div class="num">${r.oldCount} → ${r.newCount}</div><div class="lbl">Tổng mã</div></div>
+    <div class="chip c-new" onclick="scrollTo2('m-new')"><div class="num">${r.newCodes.length}</div><div class="lbl">➕ Mã mới</div></div>
+    <div class="chip c-gone" onclick="scrollTo2('m-gone')"><div class="num">${r.gone.length}</div><div class="lbl">🚫 Bỏ / hết</div></div>
+    <div class="chip c-up" onclick="scrollTo2('m-price')"><div class="num">${r.up.length}</div><div class="lbl">📈 Tăng giá</div></div>
+    <div class="chip c-down" onclick="scrollTo2('m-price')"><div class="num">${r.down.length}</div><div class="lbl">📉 Giảm giá</div></div>
+    <div class="chip c-note" onclick="scrollTo2('m-note')"><div class="num">${r.noteChg.length}</div><div class="lbl">📝 Đổi ghi chú</div></div>
+    <div class="chip c-back" onclick="scrollTo2('m-dup')"><div class="num">${r.dups.length}</div><div class="lbl">👯 Trùng nội ngày</div></div>
+    ${(function(){const n=r.issues.oldSkipped.length+r.issues.newSkipped.length+r.issues.oldAmb.length+r.issues.newAmb.length;
+      return n?`<div class="chip" onclick="scrollTo2('m-issue')" style="border-color:var(--up)"><div class="num" style="color:var(--up)">${n}</div><div class="lbl">⚠️ Cần kiểm tra</div></div>`:"";})()}`;
+  const M = $("modules"); M.innerHTML="";
+  const mod=(id,title,head,rows,emptyMsg)=>{
+    M.insertAdjacentHTML("beforeend",
+    `<div class="module" id="${id}"><h3>${title}<span class="cnt">${rows.length}</span></h3>
+     ${rows.length? `<table><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="empty">${emptyMsg}</div>`}
+     </div>`);
+  };
+  // Module ⚠️ luôn hiện đầu tiên nếu có vấn đề
+  const issueRows = [];
+  const pushIssue = (arr, side, type)=>arr.forEach(x=>issueRows.push(
+    `<tr><td>${side}</td><td>${type}</td><td class="num">${x.ln}</td><td style="font-family:Consolas,monospace;font-size:12px">${x.line.replace(/</g,"&lt;")}${x.chosen?`<div class="real-price">→ máy đã chọn giá: <b>${fmt(x.chosen)}</b> — kiểm tra xem có đúng không</div>`:""}</td></tr>`));
+  pushIssue(r.issues.oldSkipped,"Ngày cũ","Bỏ qua (không đọc được giá)");
+  pushIssue(r.issues.newSkipped,"Ngày mới","Bỏ qua (không đọc được giá)");
+  pushIssue(r.issues.oldAmb,"Ngày cũ","Nghi vấn (2 số lớn liền nhau)");
+  pushIssue(r.issues.newAmb,"Ngày mới","Nghi vấn (2 số lớn liền nhau)");
+  if(issueRows.length){
+    M.insertAdjacentHTML("beforeend",
+    `<div class="module" id="m-issue" style="border-color:var(--up)"><h3 style="color:var(--up)">⚠️ Dòng cần kiểm tra thủ công<span class="cnt">${issueRows.length}</span></h3>
+     <div class="rules-hint" style="padding:10px 16px 0">Các dòng dưới đây máy KHÔNG chắc chắn đọc đúng. Dòng "Bỏ qua" đã bị loại khỏi so sánh (có thể gây báo nhầm "Mã bị bỏ"). Dòng "Nghi vấn" vẫn được so sánh nhưng giá có thể nhận sai — hãy sửa lại dữ liệu gốc (thêm/bớt khoảng trắng) rồi bấm So sánh lại.</div>
+     <table><thead><tr><th>Bảng</th><th>Loại</th><th style="text-align:right">Dòng</th><th>Nội dung gốc</th></tr></thead><tbody>${issueRows.join("")}</tbody></table></div>`);
+  }
+  const ruleTag = x => x.hits&&x.hits.length? `<div class="real-price">quy tắc: ${x.hits.join(", ")} (niêm yết ${fmt(x.oldList)}→${fmt(x.newList)})</div>`:"";
+  const priceRows = [...r.up,...r.down].sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).map(x=>
+    `<tr><td class="code">${x.code}</td><td class="num">${fmt(x.oldP)}</td><td class="num">${fmt(x.newP)}</td>
+     <td class="num ${x.d>0?'delta-up':'delta-down'}">${x.d>0?'+':''}${fmt(x.d)}</td>
+     <td><span class="tag ${x.d>0?'tag-up':'tag-down'}">${x.d>0?'TĂNG':'GIẢM'}</span></td>
+     <td>${x.note||''}${ruleTag(x)}</td></tr>`);
+  mod("m-price","💰 Thay đổi giá (giá thực sau quy tắc)","<th>Mã</th><th style='text-align:right'>Giá cũ</th><th style='text-align:right'>Giá mới</th><th style='text-align:right'>Δ</th><th></th><th>Ghi chú</th>",priceRows,"Không có thay đổi giá.");
+  mod("m-new","➕ Mã mới","<th>Mã</th><th style='text-align:right'>Giá thực</th><th>Ghi chú</th>",
+    r.newCodes.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.real)}</td><td>${x.note||''}</td></tr>`),"Không có mã mới.");
+  mod("m-gone","🚫 Mã bị bỏ / Hết hàng","<th>Mã</th><th style='text-align:right'>Giá cuối</th><th>Ghi chú cuối</th>",
+    r.gone.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.real)}</td><td>${x.note||''}</td></tr>`),"Không có mã bị bỏ.");
+  mod("m-note","📝 Thay đổi ghi chú","<th>Mã</th><th style='text-align:right'>Giá</th><th>Ghi chú cũ</th><th>Ghi chú mới</th>",
+    r.noteChg.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.price)}</td><td class="old-note">${x.oldNote||'(trống)'}</td><td>${x.newNote||'(trống)'}</td></tr>`),"Không có thay đổi ghi chú.");
+  mod("m-dup","👯 Trùng mã nội ngày (ngày mới)","<th>Mã</th><th>Các bản ghi</th>",
+    r.dups.map(x=>`<tr><td class="code">${x.code}</td><td>${[x.main,...x.dups].map(d=>fmt(d.price)+(d.note?" · "+d.note:"")).join("<br>")}</td></tr>`),"Không có mã trùng.");
+}
+function scrollTo2(id){ const el=$(id); if(el) el.scrollIntoView({behavior:"smooth"}); }
+
+/* ---------- Tổng hợp ---------- */
+function renderTong(){
+  const active = state.filter(s=>s.result);
+  if(!active.length){
+    $("insights").innerHTML = `<div class="empty">Chưa có NCC nào được phân tích. Vào từng tab NCC, paste 2 bảng giá và bấm "So sánh".</div>`;
+    ["tbVol","tbGoneAll","tbOverview","tbLookup"].forEach(id=>$(id).innerHTML="");
+    $("cntVol").textContent=$("cntGoneAll").textContent="";
+    return;
+  }
+  let vol=[];
+  active.forEach(s=>{[...s.result.up,...s.result.down].forEach(x=>vol.push({...x,ncc:s.name,pct:Math.abs(x.d)/x.oldP*100}));});
+  vol.sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
+  $("cntVol").textContent = vol.length+" thay đổi";
+  $("tbVol").innerHTML = vol.slice(0,30).map(x=>
+    `<tr><td class="code">${x.code}</td><td><span class="badge-ncc">${x.ncc}</span></td>
+     <td class="num">${fmt(x.oldP)}</td><td class="num">${fmt(x.newP)}</td>
+     <td class="num ${x.d>0?'delta-up':'delta-down'}">${x.d>0?'+':''}${fmt(x.d)}</td>
+     <td class="num ${x.d>0?'delta-up':'delta-down'}">${x.pct.toFixed(1)}%</td></tr>`).join("")
+    || `<tr><td colspan="6" class="empty">Không có biến động giá.</td></tr>`;
+
+  const goneMap = new Map();
+  active.forEach(s=>s.result.gone.forEach(g=>{
+    if(!goneMap.has(g.code)) goneMap.set(g.code,[]);
+    goneMap.get(g.code).push(s.name);
+  }));
+  const goneArr = [...goneMap.entries()].sort((a,b)=>b[1].length-a[1].length);
+  $("cntGoneAll").textContent = goneArr.length+" mã";
+  $("tbGoneAll").innerHTML = goneArr.slice(0,40).map(([code,nccs])=>
+    `<tr><td class="code">${code}</td><td>${nccs.length}</td><td>${nccs.map(n=>`<span class="badge-ncc">${n}</span>`).join(" ")}</td></tr>`).join("")
+    || `<tr><td colspan="3" class="empty">Không có mã bị bỏ.</td></tr>`;
+
+  $("tbOverview").innerHTML = active.map(s=>{
+    const r=s.result;
+    return `<tr><td><b>${s.name}</b> <span style="color:var(--dim);font-size:11px">${s.lblOld||''} → ${s.lblNew||''}</span></td>
+     <td class="num">${r.oldCount}</td><td class="num">${r.newCount}</td>
+     <td class="num" style="color:var(--new)">${r.newCodes.length}</td>
+     <td class="num" style="color:var(--gone)">${r.gone.length}</td>
+     <td class="num delta-up">${r.up.length}</td><td class="num delta-down">${r.down.length}</td>
+     <td class="num" style="color:var(--note)">${r.noteChg.length}</td></tr>`;
+  }).join("");
+
+  const ins=[];
+  if(vol.length){
+    const t=vol[0];
+    ins.push(`💥 Biến động lớn nhất: <b>${t.code}</b> (${t.ncc}) ${t.d>0?"tăng":"giảm"} <b>${fmt(Math.abs(t.d))}K</b> (${t.pct.toFixed(1)}%).`);
+    const upN=vol.filter(x=>x.d>0).length, downN=vol.filter(x=>x.d<0).length;
+    ins.push(`📊 Toàn thị trường: <b class="delta-up">${upN} lượt tăng</b> / <b class="delta-down">${downN} lượt giảm</b> → xu hướng chung đang <b>${upN>downN?"TĂNG":upN<downN?"GIẢM":"đi ngang"}</b>.`);
+  }
+  const multiGone = goneArr.filter(g=>g[1].length>=2);
+  if(multiGone.length) ins.push(`🚨 <b>${multiGone.length} mã</b> bị bỏ ở ≥2 NCC cùng lúc (khả năng khan hàng toàn thị trường): ${multiGone.slice(0,5).map(g=>`<b>${g[0]}</b>`).join(", ")}${multiGone.length>5?"...":""}`);
+  const upMap=new Map();
+  active.forEach(s=>s.result.up.forEach(x=>{if(!upMap.has(x.code))upMap.set(x.code,[]);upMap.get(x.code).push(s.name);}));
+  const multiUp=[...upMap.entries()].filter(e=>e[1].length>=2);
+  if(multiUp.length) ins.push(`📈 Mã tăng giá đồng loạt ở ≥2 NCC (nên nhập sớm nếu còn giá tốt): ${multiUp.slice(0,5).map(e=>`<b>${e[0]}</b>`).join(", ")}`);
+  const downMap=new Map();
+  active.forEach(s=>s.result.down.forEach(x=>{if(!downMap.has(x.code))downMap.set(x.code,[]);downMap.get(x.code).push(s.name);}));
+  const md=[...downMap.entries()].filter(e=>e[1].length>=2);
+  if(md.length) ins.push(`📉 Mã giảm giá đồng loạt ở ≥2 NCC (cân nhắc điều chỉnh giá bán / chờ đáy): ${md.slice(0,5).map(e=>`<b>${e[0]}</b>`).join(", ")}`);
+  const totalNew = active.reduce((a,s)=>a+s.result.newCodes.length,0);
+  if(totalNew) ins.push(`➕ Tổng <b>${totalNew} mã mới</b> xuất hiện trên ${active.length} NCC — kiểm tra tab từng NCC để xem chi tiết.`);
+  $("insights").innerHTML = ins.map(i=>`<div class="insight">${i}</div>`).join("") || `<div class="empty">Chưa đủ dữ liệu để nhận định.</div>`;
+  lookup();
+}
+
+function lookup(){
+  const q = ($("lookupInput").value||"").trim().toUpperCase();
+  const tb = $("tbLookup");
+  if(!q){ tb.innerHTML=`<tr><td colspan="6" class="empty">Nhập mã để tra cứu giá trên tất cả NCC.</td></tr>`; return; }
+  const rows=[];
+  state.filter(s=>s.result).forEach(s=>{
+    const codes = new Set([...s.result.oldMap.keys(),...s.result.newMap.keys()]);
+    codes.forEach(code=>{
+      if(!code.includes(q)) return;
+      const o=s.result.oldMap.get(code), n=s.result.newMap.get(code);
+      let st;
+      if(o&&n){ const d=n.real-o.real;
+        st = d>0?`<span class="tag tag-up">TĂNG +${fmt(d)}</span>`:d<0?`<span class="tag tag-down">GIẢM ${fmt(d)}</span>`:`Giữ giá`;
+      } else if(!o&&n) st=`<span class="tag tag-new">MỚI</span>`;
+      else st=`<span class="tag tag-gone">ĐÃ BỎ</span>`;
+      rows.push(`<tr><td class="code">${code}</td><td><span class="badge-ncc">${s.name}</span></td>
+        <td class="num">${o?fmt(o.real):'—'}</td><td class="num">${n?fmt(n.real):'—'}</td>
+        <td>${st}</td><td>${n?(n.note||''):(o.note||'')}</td></tr>`);
+    });
+  });
+  tb.innerHTML = rows.slice(0,100).join("") || `<tr><td colspan="6" class="empty">Không tìm thấy mã "${q}" ở NCC nào.</td></tr>`;
+}
+
+renderTabs(); showNcc();
+</script>
+</body>
+</html>
