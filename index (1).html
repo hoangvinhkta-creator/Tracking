@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cập Nhật Giá Tín Phát</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#0e1116; --panel:#161b23; --panel2:#1c2330; --line:#2a3242;
+  --text:#dfe6f0; --dim:#8b96a8;
+  --up:#ff6b6b; --down:#4ade80; --new:#60a5fa; --gone:#f59e0b; --note:#c084fc; --back:#2dd4bf;
+  --accent:#ffb84d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px}
+header{padding:16px 24px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:19px;color:var(--accent);letter-spacing:.5px}
+header .sub{color:var(--dim);font-size:12px}
+.container{max-width:1400px;margin:0 auto;padding:16px 24px 60px}
+
+/* Tabs */
+.ncc-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.ncc-tab{padding:9px 12px 9px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);cursor:pointer;color:var(--dim);font-size:13px;user-select:none;display:flex;align-items:center;gap:6px}
+.ncc-tab:hover{border-color:var(--accent)}
+.ncc-tab.active{background:var(--accent);color:#1a1200;font-weight:700;border-color:var(--accent)}
+.ncc-tab .dot{width:7px;height:7px;border-radius:50%;background:var(--down)}
+.ncc-tab .pencil{opacity:.45;font-size:11px;padding:2px 3px;border-radius:4px}
+.ncc-tab .pencil:hover{opacity:1;background:rgba(0,0,0,.15)}
+.ncc-tab input{background:rgba(255,255,255,.9);border:1px solid var(--accent);border-radius:5px;color:#111;font:inherit;width:100px;text-align:center;outline:none;padding:1px 4px}
+.ncc-tab.tab-tong{background:var(--panel2);border-color:var(--accent);color:var(--accent);font-weight:700}
+.ncc-tab.tab-tong.active{background:var(--accent);color:#1a1200}
+
+/* Paste area */
+.paste-wrap{display:grid;grid-template-columns:1fr 46px 1fr;gap:0;align-items:stretch;margin-bottom:14px}
+.paste-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden}
+.paste-box .pb-head{padding:9px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.paste-box .pb-head b{font-size:13px;white-space:nowrap}
+.paste-box .pb-head input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:4px 8px;width:80px;font-size:12px;text-align:center}
+.btn-paste{background:var(--panel2);border:1px solid var(--accent);color:var(--accent);border-radius:7px;padding:5px 12px;font-size:12.5px;cursor:pointer;font-weight:700;white-space:nowrap}
+.btn-paste:hover{background:var(--accent);color:#1a1200}
+.paste-box textarea{flex:1;min-height:240px;background:transparent;border:none;resize:vertical;color:var(--text);padding:12px 14px;font-family:Consolas,monospace;font-size:12.5px;line-height:1.5;outline:none}
+.paste-box .pb-foot{padding:6px 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--line)}
+.mid-arrow{display:flex;align-items:center;justify-content:center}
+.old-box .pb-head b{color:var(--dim)}
+.new-box{border-color:#3a4a66}
+
+.btn-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+button.act{background:var(--accent);color:#1a1200;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer}
+button.act:hover{filter:brightness(1.1)}
+button.ghost{background:var(--panel);color:var(--dim);border:1px solid var(--line);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:13px}
+button.ghost:hover{color:var(--text)}
+.swap-btn{background:var(--panel2);border:1px solid var(--line);color:var(--accent);border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:15px}
+
+/* Rules */
+.rules-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.rules-box h3{padding:10px 16px;font-size:13.5px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.rules-box h3 .cnt{margin-left:auto;color:var(--dim);font-size:12px;font-weight:400}
+.rules-body{border-top:1px solid var(--line);padding:12px 16px}
+.rules-hint{color:var(--dim);font-size:12px;margin-bottom:10px;line-height:1.55}
+.rules-table{width:auto;min-width:480px}
+.rules-table th{font-size:11px}
+.rules-table td{padding:4px 8px;border-top:none}
+.rules-table input{background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:6px 10px;font-size:13px;width:160px;outline:none}
+.rules-table input.rv{width:100px;text-align:right;font-family:Consolas,monospace}
+.rules-table input:focus{border-color:var(--accent)}
+.rule-del{background:none;border:none;color:var(--up);cursor:pointer;font-size:15px;padding:2px 6px}
+.btn-addrule{background:var(--panel2);border:1px dashed var(--line);color:var(--dim);border-radius:7px;padding:6px 14px;cursor:pointer;font-size:12.5px;margin-top:6px}
+.btn-addrule:hover{color:var(--accent);border-color:var(--accent)}
+.real-price{color:var(--dim);font-size:11.5px}
+
+/* Chips + modules */
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;text-align:center;min-width:96px;cursor:pointer}
+.chip .num{font-size:22px;font-weight:800}
+.chip .lbl{font-size:11px;color:var(--dim);margin-top:2px}
+.chip.c-new .num{color:var(--new)} .chip.c-gone .num{color:var(--gone)}
+.chip.c-up .num{color:var(--up)} .chip.c-down .num{color:var(--down)}
+.chip.c-note .num{color:var(--note)} .chip.c-back .num{color:var(--back)}
+.module{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.module h3{padding:11px 16px;font-size:14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.module h3 .cnt{margin-left:auto;background:var(--panel2);border-radius:20px;padding:2px 10px;font-size:12px;color:var(--dim)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--panel2);color:var(--dim);text-align:left;padding:8px 12px;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:7px 12px;border-top:1px solid var(--line);vertical-align:top}
+td.code{font-family:Consolas,monospace;font-weight:700;white-space:nowrap}
+td.num{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
+.delta-up{color:var(--up);font-weight:700} .delta-down{color:var(--down);font-weight:700}
+.tag{display:inline-block;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700}
+.tag-up{background:rgba(255,107,107,.15);color:var(--up)} .tag-down{background:rgba(74,222,128,.13);color:var(--down)}
+.tag-new{background:rgba(96,165,250,.15);color:var(--new)} .tag-gone{background:rgba(245,158,11,.15);color:var(--gone)}
+.empty{padding:16px;color:var(--dim);font-size:13px;text-align:center}
+.old-note{color:var(--dim);text-decoration:line-through}
+.hidden{display:none}
+.insight{background:var(--panel2);border-left:3px solid var(--accent);padding:10px 14px;margin:10px 16px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.6}
+.badge-ncc{display:inline-block;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 8px;font-size:11px;color:var(--accent);margin-right:4px}
+.filter-row{padding:10px 16px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.filter-row input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:7px 12px;font-size:13px;flex:1;min-width:180px;outline:none}
+
+
+/* Home feature blocks */
+#homeScreen{padding:30px 0}
+.home-hero{text-align:center}
+.home-hero h2{font-size:26px;color:var(--accent);margin-bottom:8px}
+.home-hero .hh-sub{color:var(--dim);font-size:13px;margin-bottom:30px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;max-width:1000px;margin:0 auto}
+.fcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:30px 24px;cursor:pointer;transition:border-color .2s, transform .15s;text-align:center}
+.fcard:hover{border-color:var(--accent);transform:translateY(-3px)}
+.fcard .fc-icon{font-size:38px;margin-bottom:12px}
+.fcard h3{font-size:16px;color:var(--accent);margin-bottom:8px}
+.fcard p{color:var(--dim);font-size:12.5px;line-height:1.6}
+.fcard.locked{opacity:.35;cursor:not-allowed}
+.fcard.locked:hover{border-color:var(--line);transform:none}
+.user-detail-row{background:var(--panel2)}
+.user-detail-row td{padding:14px 16px}
+.acct-info{padding:14px 16px;line-height:2;font-size:13.5px}
+.acct-info .badge-ncc{margin-left:4px}
+
+
+.logo-chip{background:#fff;border-radius:12px;padding:6px 10px;display:inline-flex;align-items:center;justify-content:center}
+.logo-chip img{height:34px;display:block}
+.login-box .logo-chip{padding:12px 18px;margin:0 auto 16px;display:flex;width:fit-content}
+.login-box .logo-chip img{height:64px}
+.home-hero .logo-chip{padding:12px 20px;margin-bottom:18px}
+.home-hero .logo-chip img{height:56px}
+.credit{color:var(--dim);font-size:11px;letter-spacing:.3px}
+
+
+/* Báo cáo ngày (biểu mẫu sáng để lưu ảnh) */
+#reportCard{background:#ffffff;color:#1c2430;border-radius:14px;max-width:900px;margin:0 auto;overflow:hidden;font-size:13.5px}
+#reportCard .rp-head{background:#1f2a5e;color:#fff;padding:20px 26px;display:flex;align-items:center;gap:16px}
+#reportCard .rp-head .logo-chip{padding:8px 12px}
+#reportCard .rp-head .logo-chip img{height:40px}
+#reportCard .rp-head h2{font-size:20px;letter-spacing:.5px;color:#ffb84d}
+#reportCard .rp-head .rp-date{font-size:12.5px;opacity:.85;margin-top:3px}
+#reportCard .rp-sec{padding:14px 26px 4px}
+#reportCard .rp-sec h4{font-size:13px;color:#1f2a5e;text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid #ffb84d;display:inline-block;padding-bottom:3px;margin-bottom:10px}
+#reportCard table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:12px}
+#reportCard th{background:#eef1f8;color:#44506b;padding:7px 10px;text-align:left;font-size:11px;text-transform:uppercase}
+#reportCard td{padding:6px 10px;border-bottom:1px solid #eceff5;color:#1c2430}
+#reportCard td.num{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
+#reportCard .r-up{color:#d63333;font-weight:700}
+#reportCard .r-down{color:#1a9e50;font-weight:700}
+#reportCard .rp-badge{display:inline-block;border-radius:5px;padding:1px 8px;font-size:11px;font-weight:700;color:#1c2430;margin:1px 3px 1px 0}
+#reportCard .rp-ins{background:#fff7ea;border-left:3px solid #ffb84d;padding:8px 12px;margin-bottom:8px;border-radius:0 6px 6px 0;line-height:1.55}
+#reportCard .rp-foot{padding:12px 26px;color:#8a93a8;font-size:11px;border-top:1px solid #eceff5;display:flex;justify-content:space-between}
+/* Checklist NCC */
+.day-check{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0;padding:10px 14px;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.day-check .dc-badge{cursor:pointer;border-radius:6px;padding:3px 10px;font-size:12px;font-weight:700}
+
+/* Login */
+#loginScreen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center}
+.login-box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:36px;width:360px;max-width:92vw}
+.login-box h2{color:var(--accent);font-size:20px;margin-bottom:6px;text-align:center}
+.login-box .lb-sub{color:var(--dim);font-size:12px;text-align:center;margin-bottom:22px}
+.login-box input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:11px 14px;font-size:14px;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:var(--accent)}
+.login-box button.act{width:100%;padding:12px}
+.login-msg{color:var(--up);font-size:12.5px;min-height:18px;margin-bottom:8px;text-align:center}
+.pending-panel{border-top:1px dashed var(--line);margin-top:18px;padding-top:16px}
+.pending-panel .pp-title{color:var(--gone);font-size:13px;font-weight:700;margin-bottom:10px;text-align:center}
+/* Admin */
+.perm-chk{margin-right:10px;font-size:12px;color:var(--dim);white-space:nowrap;cursor:pointer}
+.perm-chk input{accent-color:var(--accent);margin-right:3px}
+.adm-form{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.adm-form input{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 12px;font-size:13px;outline:none}
+.btn-mini{background:var(--panel2);border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px}
+.btn-mini:hover{color:var(--accent);border-color:var(--accent)}
+.btn-mini.danger:hover{color:var(--up);border-color:var(--up)}
+.btn-mini.ok{color:var(--down);border-color:var(--down)}
+
+@media(max-width:900px){.paste-wrap{grid-template-columns:1fr}.mid-arrow{transform:rotate(90deg);padding:6px 0}}
+</style>
+</head>
+<body>
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="logo-chip"><img src="data:image/jpeg;base64,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" alt="Tín Phát"></div>
+    <h2>CẬP NHẬT GIÁ TÍN PHÁT</h2>
+    <div class="lb-sub">Đăng nhập để tiếp tục<br><span class="credit">Thiết kế bởi Hoàng Vinh với Fable5</span></div>
+    <input id="loginEmail" type="email" placeholder="Email" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="Mật khẩu" autocomplete="current-password">
+    <div class="login-msg" id="loginMsg"></div>
+    <button class="act" onclick="doLogin()">Đăng nhập</button>
+    <div class="pending-panel hidden" id="pendingPanel">
+      <div class="pp-title">🔒 Thiết bị mới — cần quản trị viên duyệt</div>
+      <div style="color:var(--dim);font-size:12px;margin-bottom:12px;line-height:1.6">
+        Tài khoản đúng nhưng thiết bị này chưa được cấp phép. Quản trị viên nhập tài khoản ngay tại đây để duyệt (mỗi tài khoản chỉ dùng 1 thiết bị — duyệt máy này sẽ tự thoát máy cũ).
+      </div>
+      <input id="admEmail" type="email" placeholder="Email quản trị">
+      <input id="admPass" type="password" placeholder="Mật khẩu quản trị">
+      <button class="act" onclick="approveHere()">✅ Duyệt thiết bị này</button>
+    </div>
+  </div>
+</div>
+<header>
+  <span class="logo-chip"><img src="data:image/jpeg;base64,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" alt="Tín Phát"></span>
+  <div><h1>CẬP NHẬT GIÁ TÍN PHÁT</h1>
+  <div class="credit">Thiết kế bởi Hoàng Vinh với Fable5</div></div>
+  <span class="sub">Điện Máy Tín Phát · Giá: nghìn đồng (K) · ✏️ đổi tên NCC</span>
+  <span class="sub" id="lastEdit" style="color:var(--accent)"></span>
+  <span class="sub" id="cloudStat"></span>
+  <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button class="btn-paste" id="btnHome" onclick="goHome()" style="display:none">🏠 Trang chủ</button>
+    <span class="sub">👤 <b id="userName" style="color:var(--text)">?</b></span>
+    <button class="btn-paste" onclick="doLogout()">Đăng xuất</button>
+  </span>
+</header>
+<div class="container">
+
+
+  <!-- Trang chủ chọn tính năng -->
+  <div id="homeScreen" class="hidden">
+    <div class="home-hero">
+      <div class="logo-chip"><img src="data:image/jpeg;base64,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" alt="Tín Phát"></div>
+      <h2>Cập Nhật Giá Tín Phát</h2>
+      <div class="hh-sub" id="homeWelcome"></div>
+      <div class="cards" id="homeCards"></div>
+    </div>
+  </div>
+
+  <div class="ncc-tabs" id="nccTabs"></div>
+
+  <div id="nccArea">
+    <div class="day-check" id="dayCheck"></div>
+    <!-- Bảng quy tắc -->
+    <div class="rules-box">
+      <h3 onclick="toggleRules()">⚙️ Quy tắc điều chỉnh giá — <span id="rulesNccName"></span><span class="cnt" id="rulesCnt"></span><span id="rulesArrow">▸</span></h3>
+      <div class="rules-body hidden" id="rulesBody">
+        <div class="rules-hint">
+          Nếu <b>ghi chú</b> của mã chứa từ khóa ở cột A → giá thực = giá niêm yết <b>trừ</b> giá trị ở cột B.<br>
+          VD: <code>KM → 100</code> nghĩa là mã có ghi chú chứa "KM" sẽ trừ 100K. Muốn <b>cộng</b> thì điền số âm (VD: -50).
+          Mọi so sánh Tăng/Giảm đều dùng <b>giá thực</b> sau điều chỉnh. Quy tắc áp dụng riêng cho từng NCC.
+        </div>
+        <table class="rules-table">
+          <thead><tr><th>A · Từ khóa trong ghi chú</th><th>B · Trừ (K)</th><th></th></tr></thead>
+          <tbody id="rulesRows"></tbody>
+        </table>
+        <button class="btn-addrule" onclick="addRule()">＋ Thêm quy tắc</button>
+        <button class="btn-addrule" onclick="copyRulesToAll()">📋 Áp dụng bộ quy tắc này cho tất cả NCC</button>
+      </div>
+    </div>
+
+    <div class="paste-wrap">
+      <div class="paste-box old-box">
+        <div class="pb-head">
+          <b>📄 Ngày cũ</b>
+          <input id="lblOld" placeholder="15/07">
+          <button class="btn-paste" onclick="pasteInto('txtOld')">📋 Dán</button>
+        </div>
+        <textarea id="txtOld" placeholder="Paste bảng giá ngày cũ (hoặc bấm nút 📋 Dán)...&#10;&#10;Mỗi dòng: MÃ  GIÁ  GHI CHÚ"></textarea>
+        <div class="pb-foot" id="footOld">0 dòng · 0 mã</div>
+      </div>
+      <div class="mid-arrow"><button class="swap-btn" onclick="swapSides()" title="Đảo 2 bên">⇄</button></div>
+      <div class="paste-box new-box">
+        <div class="pb-head">
+          <b>📄 Ngày mới</b>
+          <input id="lblNew" placeholder="16/07">
+          <button class="btn-paste" onclick="pasteInto('txtNew')">📋 Dán</button>
+        </div>
+        <textarea id="txtNew" placeholder="Paste bảng giá ngày mới..."></textarea>
+        <div class="pb-foot" id="footNew">0 dòng · 0 mã</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="act" onclick="analyze()">🔍 So sánh</button>
+      <button class="ghost" onclick="clearCurrent()">Xoá NCC này</button>
+      <button class="ghost" onclick="analyzeAll()">⚡ Phân tích lại tất cả</button>
+    </div>
+
+    <div id="resultArea" class="hidden">
+      <div class="chips" id="chips"></div>
+      <div id="modules"></div>
+    </div>
+  </div>
+
+  <div id="tongArea" class="hidden">
+    <div class="day-check" id="dayCheck2"></div>
+    <div class="btn-row">
+      <button class="act" onclick="goReport()">🧾 Tạo báo cáo ngày (Lưu ảnh / Excel)</button>
+    </div>
+    <div class="module"><h3>🧠 Nhận định tổng hợp</h3><div id="insights"></div></div>
+    <div class="module">
+      <h3>💥 Model biến động giá mạnh nhất (giá thực, tất cả NCC)<span class="cnt" id="cntVol"></span></h3>
+      <table><thead><tr><th>Mã</th><th>NCC</th><th style="text-align:right">Giá cũ</th><th style="text-align:right">Giá mới</th><th style="text-align:right">Δ</th><th style="text-align:right">%</th></tr></thead>
+      <tbody id="tbVol"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>🚫 Model bị bỏ ở ≥2 NCC (kèm NCC còn hàng)<span class="cnt" id="cntGoneAll"></span></h3>
+      <table><thead><tr><th>Mã</th><th>🚫 NCC đã bỏ</th><th>✅ NCC còn hàng</th></tr></thead><tbody id="tbGoneAll"></tbody></table>
+    </div>
+        <div class="module">
+      <h3>🔗 Gợi ý mã na ná giữa các NCC (≥85% giống)<span class="cnt" id="cntSim"></span></h3>
+      <div class="rules-hint" style="padding:10px 16px 0">Có thể là cùng một model nhưng mỗi NCC ghi lệch nhau. Chỉ là GỢI Ý để bạn xác nhận với NCC — máy không tự ghép.</div>
+      <table><thead><tr><th>Mã 1</th><th>NCC · Giá</th><th>Mã 2</th><th>NCC · Giá</th><th style="text-align:right">Giống</th></tr></thead>
+      <tbody id="tbSim"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>📊 Tổng quan từng NCC</h3>
+      <table><thead><tr><th>NCC</th><th style="text-align:right">Mã cũ</th><th style="text-align:right">Mã mới</th><th style="text-align:right">➕ Mới</th><th style="text-align:right">🚫 Bỏ</th><th style="text-align:right">📈 Tăng</th><th style="text-align:right">📉 Giảm</th><th style="text-align:right">📝 Đổi ghi chú</th></tr></thead>
+      <tbody id="tbOverview"></tbody></table>
+    </div>
+  </div><!-- /tongArea -->
+
+  <!-- Báo cáo ngày để lưu ảnh -->
+  <div id="reportArea" class="hidden">
+    <div class="btn-row" style="justify-content:center">
+      <button class="ghost" onclick="goSummary()">← Quay lại</button>
+      <button class="act" onclick="saveReportImage()">🖼️ Lưu ảnh PNG</button>
+      <button class="act" onclick="exportReportExcel()">📗 Xuất Excel</button>
+    </div>
+    <div id="reportCard"></div>
+  </div>
+
+  <!-- Khu vực Admin -->
+  <div id="adminArea" class="hidden">
+    <div class="module">
+      <h3>👤 Thông tin tài khoản</h3>
+      <div class="acct-info" id="myInfo"></div>
+    </div>
+    <div class="module">
+      <h3>🔑 Đổi mật khẩu</h3>
+      <div class="adm-form">
+        <input id="myOldPass" type="password" placeholder="Mật khẩu hiện tại">
+        <input id="myNewPass" type="password" placeholder="Mật khẩu mới">
+        <button class="act" style="padding:8px 18px" onclick="admChangeMyPass()">Đổi mật khẩu</button>
+      </div>
+    </div>
+    <div id="adminOnly">
+    <div class="module">
+      <h3>👥 Tạo tài khoản & cấp quyền<span class="cnt" id="cntUsers"></span></h3>
+      <div class="rules-hint" style="padding:10px 16px 0">Bấm vào một tài khoản để mở danh sách quyền — tích ✓ vào tính năng nào thì tài khoản đó thấy khối tính năng đó ngay sau khi đăng nhập.</div>
+      <div class="adm-form">
+        <input id="nuName" placeholder="Tên hiển thị (VD: Ly, Kiên...)" style="flex:1;min-width:150px">
+        <input id="nuEmail" type="email" placeholder="Email đăng nhập" style="flex:2;min-width:200px">
+        <input id="nuPass" type="password" placeholder="Mật khẩu" style="flex:1;min-width:130px">
+        <button class="act" style="padding:8px 18px" onclick="admAddUser()">＋ Thêm tài khoản</button>
+      </div>
+      <table><thead><tr><th>Email</th><th>Quyền</th><th style="width:200px">Thao tác</th></tr></thead>
+      <tbody id="tbUsers"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>📱 Thiết bị — duyệt / thu hồi<span class="cnt" id="cntDevs"></span></h3>
+      <div class="rules-hint" style="padding:10px 16px 0">Mỗi tài khoản chỉ hoạt động trên 1 thiết bị. Duyệt thiết bị mới sẽ tự thu hồi thiết bị cũ của tài khoản đó. Thu hồi thiết bị → người đó bị đăng xuất ngay.</div>
+      <table><thead><tr><th>Tài khoản</th><th>Thiết bị</th><th>Trạng thái</th><th>Lần cuối</th><th style="width:160px">Thao tác</th></tr></thead>
+      <tbody id="tbDevs"></tbody></table>
+    </div>
+    <div class="module">
+      <h3>🕵️ Theo dõi hoạt động tài khoản<span class="cnt" id="cntHist"></span></h3>
+      <table><thead><tr><th style="width:170px">Thời gian</th><th style="width:140px">Người sửa</th><th>Thay đổi</th></tr></thead>
+      <tbody id="tbHist"></tbody></table>
+    </div>
+    </div><!-- /adminOnly -->
+  </div><!-- /adminArea -->
+</div><!-- /container -->
+
+<script>
+const N_SLOTS = 10;
+const DEFAULT_NAMES = ["Trung Xuân","Văn Quân","Thăng Long","NCC 179","Tuấn Ngoan","NCC 6","NCC 7","NCC 8","NCC 9","NCC 10"];
+// gợi ý quy tắc sẵn theo NCC quen thuộc
+const DEFAULT_RULES = {
+  0:[{k:"Quà",v:200}],
+  2:[{k:"FT90",v:500},{k:"FT75",v:200},{k:"FT50",v:100}],
+  3:[{k:"KM",v:1000},{k:"FT75",v:200},{k:"FT50",v:100}]
+};
+const state = DEFAULT_NAMES.map((n,i)=>({name:n, old:"", nw:"", lblOld:"", lblNew:"", result:null,
+  rules:(DEFAULT_RULES[i]||[]).map(r=>({...r}))}));
+let cur = 0;
+
+const $ = id => document.getElementById(id);
+const fmt = n => n==null?"":Number.isInteger(n)?n.toLocaleString("vi-VN"):n.toLocaleString("vi-VN",{maximumFractionDigits:1});
+
+/* ---------- Parser ---------- */
+// Trích giá từ 1 token. Trả về {v, rest, pref} hoặc null.
+// Xử lý: "43,000💥", "=330K", "750K", "12.2000" (gõ thừa số 0), "6.750XK50", "7.700+FT50", "10.850(21kg)"
+function parsePriceEx(tok){
+  // bỏ ký hiệu bám đầu (=, :, *, -, emoji...) 
+  tok = tok.replace(/^[^\dA-Za-z]+/u,"");
+  const m = tok.match(/^(\d{1,3}(?:[.,]\d{3,4})+|\d+(?:[.,]\d+)?)([Kk])?(.*)$/);
+  if(!m) return null;
+  const numStr = m[1], hasK = !!m[2];
+  let rest = (m[3]||"").replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]+/u,"");
+  const hasSep = /[.,]/.test(numStr);
+  // Phần dư dính chữ/số chỉ chấp nhận khi số có phân cách nghìn hoặc có hậu tố K
+  // (chặn nhận nhầm "144HZ" hay "12kg" thành giá)
+  if(rest && /^[A-Za-z0-9]/.test(rest) && !hasSep && !hasK) return null;
+  let v;
+  if(/^\d{1,3}(?:[.,]\d{3})+$/.test(numStr)){
+    v = parseFloat(numStr.replace(/[.,]/g,""));      // định dạng nghìn chuẩn: 5.250 / 12,000
+  } else {
+    v = parseFloat(numStr.replace(",","."));          // 12.2000 (gõ thừa 0) → 12.2
+    if(v < 100 && hasSep) v = Math.round(v*1000);     // 12.2 → 12200
+  }
+  if(v >= 100000) v = Math.round(v/1000);             // giá full VND → quy về K
+  if(!(v >= 100)) return null;
+  return {v, rest, pref: hasSep || hasK};
+}
+function parsePrice(tok){ const r = parsePriceEx(tok); return r ? r.v : null; }
+// Dòng dính liền không dấu cách: "RF677WI(XK)13,500" → tách mã + giá
+function splitGlued(line){
+  const m = line.match(/^(.*?[^\d.,\s])((?:\d{1,3}(?:[.,]\d{3})+|\d{3,})(?:[^\w\s]*)?)$/u);
+  if(!m) return null;
+  const p = parsePrice(m[2]);
+  if(p===null || p<100) return null;
+  return {code:m[1].replace(/[:\-\u2013\u2014=.,;]+$/,"").trim().toUpperCase(), price:p, note:""};
+}
+function applyRules(price, note, rules){
+  let real = price; const hits=[];
+  const low = (note||"").toLowerCase();
+  rules.forEach(r=>{
+    if(r.k && low.includes(r.k.toLowerCase())){ real -= r.v; hits.push(r.k+"−"+r.v); }
+  });
+  return {real, hits};
+}
+function parseList(text, rules){
+  const map = new Map(); let lines = 0;
+  const skipped = [], ambiguous = [];
+  const isDate = t => /^\d{1,2}[.\/-]\d{1,2}([.\/-]\d{2,4})?$/.test(t);
+  text.split(/\r?\n/).forEach((raw, li)=>{
+    const line = raw.trim(); if(!line) return;
+    const toks = line.split(/[\t ]+/);
+    if(toks.length < 2){
+      const g1 = splitGlued(line);
+      if(g1 && g1.code){
+        const {real, hits} = applyRules(g1.price, g1.note, rules||[]);
+        lines++;
+        const entry = {price:g1.price, real, note:g1.note, hits};
+        if(map.has(g1.code)){ const e=map.get(g1.code); e.dups=e.dups||[]; e.dups.push(entry); }
+        else map.set(g1.code, entry);
+        return;
+      }
+      return; // 1 token không tách được → dòng tiêu đề, bỏ qua im lặng
+    }
+    // tìm TẤT CẢ ứng viên giá
+    const cands = [];
+    for(let i=1;i<toks.length;i++){
+      if(isDate(toks[i])) continue;
+      const p = parsePriceEx(toks[i]);
+      if(p) cands.push({i, p:p.v, rest:p.rest, pref:p.pref});
+    }
+    if(!cands.length){
+      const g = splitGlued(line);
+      if(g && g.code){
+        const {real, hits} = applyRules(g.price, g.note, rules||[]);
+        lines++;
+        const entry = {price:g.price, real, note:g.note, hits};
+        if(map.has(g.code)){ const e=map.get(g.code); e.dups=e.dups||[]; e.dups.push(entry); }
+        else map.set(g.code, entry);
+        return;
+      }
+      // Chỉ cảnh báo nếu dòng có token THUẦN SỐ lớn đứng riêng (khả năng là giá gõ sai).
+      // Số nằm bên trong mã (S106FC1LV, "ib"...) thì bỏ qua im lặng.
+      const hasBareNum = toks.some(t=>!isDate(t) && /^[^A-Za-z]*\d{3,}[^A-Za-z]*$/.test(t));
+      if(hasBareNum) skipped.push({ln:li+1, line});
+      return;
+    }
+    // Ưu tiên ứng viên có định dạng giá chuẩn (phân cách nghìn / hậu tố K) trước số trơn
+    const chosen = cands.find(c=>c.pref) || cands[0];
+    const priceIdx = chosen.i, price = chosen.p;
+    const susAdjacent = cands.length>1 && cands.some(c=>c.i===priceIdx+1) && priceIdx <= 2 && !chosen.pref;
+    const susSmall = price<1000 && !chosen.pref && cands.some(c=>c.i>priceIdx && c.p >= price*4);
+    if(susAdjacent || susSmall){
+      ambiguous.push({ln:li+1, line, chosen:price});
+    }
+    const code = toks.slice(0,priceIdx)
+      .filter(t=>!/^[:\-\u2013\u2014=>|.*+]+$/.test(t))
+      .join(" ").replace(/[:\-\u2013\u2014=.,;]+$/,"")
+      .trim().toUpperCase();
+    if(!code) return;
+    const note = (chosen.rest ? chosen.rest+" " : "") + toks.slice(priceIdx+1).join(" ");
+    const {real, hits} = applyRules(price, note.trim(), rules||[]);
+    lines++;
+    const entry = {price, real, note:note.trim(), hits};
+    if(map.has(code)){ const e=map.get(code); e.dups=e.dups||[]; e.dups.push(entry); }
+    else map.set(code, entry);
+  });
+  return {map, lines, skipped, ambiguous};
+}
+const normNote = n => (n||"").replace(/[\s\-–—.…,;:!?~*•"'`]+/g,"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2B00}-\u{2BFF}]/gu,"").toLowerCase();
+
+/* ---------- Compare (dùng giá THỰC) ---------- */
+function compare(oldText,newText,rules){
+  const O = parseList(oldText,rules), N = parseList(newText,rules);
+  const r = {newCodes:[],gone:[],up:[],down:[],noteChg:[],dups:[],oldCount:O.map.size,newCount:N.map.size,oldMap:O.map,newMap:N.map,
+             issues:{oldSkipped:O.skipped,newSkipped:N.skipped,oldAmb:O.ambiguous,newAmb:N.ambiguous}};
+  N.map.forEach((v,code)=>{
+    if(!O.map.has(code)) r.newCodes.push({code,...v});
+    else{
+      const o = O.map.get(code);
+      const d = v.real - o.real;
+      if(d>0) r.up.push({code,oldP:o.real,newP:v.real,oldList:o.price,newList:v.price,d,note:v.note,hits:v.hits});
+      else if(d<0) r.down.push({code,oldP:o.real,newP:v.real,oldList:o.price,newList:v.price,d,note:v.note,hits:v.hits});
+      else if(normNote(o.note)!==normNote(v.note)) r.noteChg.push({code,price:v.real,oldNote:o.note,newNote:v.note});
+    }
+    if(v.dups) r.dups.push({code,main:v,dups:v.dups});
+  });
+  O.map.forEach((v,code)=>{ if(!N.map.has(code)) r.gone.push({code,...v}); });
+  const byAbs=(a,b)=>Math.abs(b.d)-Math.abs(a.d);
+  r.up.sort(byAbs); r.down.sort(byAbs);
+  return r;
+}
+
+
+
+
+/* ================= ĐỒNG BỘ ĐÁM MÂY (Firebase) ================= */
+const FB_CONFIG = {
+  apiKey: "AIzaSyD2W_zJSmFXVgtlnr3aGAbYbO07bhpWXds",
+  authDomain: "tinphattracking.firebaseapp.com",
+  projectId: "tinphattracking",
+  storageBucket: "tinphattracking.firebasestorage.app",
+  messagingSenderId: "745632379369",
+  appId: "1:745632379369:web:a4e8697091941f32109b78"
+};
+const DB_URL_CANDIDATES = [
+  "https://tinphattracking-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "https://tinphattracking-default-rtdb.firebaseio.com"
+];
+let db = null, CLOUD = false;
+let AUTH_CACHE = {users:{}, devices:{}};
+let HIST_CACHE = [];
+let _lastStateJson = "";
+let _pendingWait = false;
+
+function cloudStat(txt, color){ const el=$("cloudStat"); if(el){ el.textContent=txt; el.style.color=color||"var(--dim)"; } }
+
+async function initCloud(){
+  // Chờ thư viện Firebase tải xong (tối đa 5 giây)
+  for(let i=0; i<25 && typeof firebase==="undefined"; i++){
+    await new Promise(r=>setTimeout(r,200));
+  }
+  if(typeof firebase === "undefined"){ cloudStat("⚠️ Ngoại tuyến (không tải được Firebase)","var(--up)"); return false; }
+  let url = null;
+  for(const u of DB_URL_CANDIDATES){
+    try{
+      // Dò qua nhánh state (luôn được phép đọc theo rules)
+      const r = await fetch(u + "/state.json?shallow=true");
+      if(r.ok){ url = u; break; }
+    }catch(e){}
+  }
+  if(!url){ cloudStat("⚠️ Ngoại tuyến (chưa tạo Realtime Database?)","var(--up)"); return false; }
+  firebase.initializeApp(Object.assign({}, FB_CONFIG, {databaseURL:url}));
+  db = firebase.database();
+  CLOUD = true;
+  cloudStat("☁️ Đồng bộ đám mây","var(--down)");
+  // auth: chờ giá trị đầu tiên
+  await new Promise(res=>{
+    let first = true;
+    db.ref("auth").on("value", snap=>{
+      const v = snap.val() || {};
+      // Decode key → email
+      const users = {};
+      Object.keys(v.users||{}).forEach(key=>{ users[keyToEmail(key)] = v.users[key]; });
+      AUTH_CACHE = {users, devices: v.devices||{}};
+      onAuthCloudChange();
+      if(first){ first=false; res(); }
+    });
+  });
+  db.ref("state").on("value", snap=>{
+    const v = snap.val();
+    if(v) applyCloudState(v);
+  });
+  db.ref("hist").on("value", snap=>{
+    HIST_CACHE = snap.val() || [];
+    renderLastEdit();
+    if($("tbHist") && !$("adminArea").classList.contains("hidden")) renderHist();
+  });
+  return true;
+}
+function onAuthCloudChange(){
+  // Thiết bị đang chờ duyệt: khi admin duyệt từ xa → tự vào app
+  if(_pendingWait){
+    const email = ($("loginEmail").value||"").trim().toLowerCase();
+    const d = AUTH_CACHE.devices[deviceId()];
+    if(d && d.email===email && d.approved){
+      _pendingWait = false;
+      localStorage.setItem(SESS_KEY, JSON.stringify({email, devId: deviceId()}));
+      enterApp();
+      return;
+    }
+  }
+  // Cập nhật màn admin nếu đang mở
+  if($("adminArea") && !$("adminArea").classList.contains("hidden") && currentUser() && currentUser().perms.admin) renderAdmin();
+}
+function applyCloudState(v){
+  const json = JSON.stringify(v);
+  if(json === _lastStateJson) return;
+  _lastStateJson = json;
+  const typing = document.activeElement && document.activeElement.tagName === "TEXTAREA";
+  v.forEach((s,i)=>{
+    if(!state[i]) return;
+    if(typing && i===cur && !$("nccArea").classList.contains("hidden")) return; // không ghi đè ô đang gõ
+    Object.assign(state[i], s);
+    if((state[i].old||"").trim() && (state[i].nw||"").trim())
+      state[i].result = compare(state[i].old, state[i].nw, state[i].rules||[]);
+    else state[i].result = null;
+  });
+  if(!currentUser()) return;
+  renderCheck();
+  if(!$("nccArea").classList.contains("hidden") && !typing){ renderTabs(); showNcc(); }
+  else if(!$("tongArea").classList.contains("hidden")) renderTong();
+}
+
+/* ================= XÁC THỰC & PHÂN QUYỀN ================= */
+const AUTH_KEY='ssg_auth_v1', SESS_KEY='ssg_sess_v1', DEVID_KEY='ssg_devid';
+const ROOT_ADMIN='hoangvinhkta@gmail.com';
+async function sha(t){
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('ssg#'+t));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function deviceId(){
+  let d = localStorage.getItem(DEVID_KEY);
+  if(!d){ d = 'dev_' + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem(DEVID_KEY, d); }
+  return d;
+}
+function deviceName(){
+  const ua = navigator.userAgent;
+  const os = /Windows/.test(ua)?'Windows':/Android/.test(ua)?'Android':/iPhone|iPad/.test(ua)?'iOS':/Mac/.test(ua)?'Mac':'Khác';
+  const br = /Edg\//.test(ua)?'Edge':/Chrome/.test(ua)?'Chrome':/Firefox/.test(ua)?'Firefox':/Safari/.test(ua)?'Safari':'Trình duyệt';
+  return os+' · '+br;
+}
+function loadAuth(){
+  if(CLOUD) return AUTH_CACHE;
+  try{ return JSON.parse(localStorage.getItem(AUTH_KEY)) || {users:{},devices:{}}; }catch(e){ return {users:{},devices:{}}; }
+}
+function saveAuth(a){
+  if(CLOUD){
+    AUTH_CACHE = a;
+    // Encode email → key trước khi lưu Firebase
+    const cloudData = {users:{}, devices:a.devices};
+    Object.keys(a.users).forEach(email=>{ cloudData.users[emailToKey(email)] = a.users[email]; });
+    db.ref("auth").set(cloudData).catch(e=>{
+      cloudStat("⚠️ Không ghi được tài khoản (kiểm tra Rules)","var(--up)");
+      alert("Không ghi được dữ liệu tài khoản lên đám mây.\nVào Firebase → Realtime Database → Rules, đặt:\n{ \"rules\": { \".read\": true, \".write\": true } }\nrồi bấm Publish.");
+    });
+    return;
+  }
+  localStorage.setItem(AUTH_KEY, JSON.stringify(a));
+}
+async function initAuth(){
+  const a = loadAuth();
+  if(!a.users[ROOT_ADMIN]){
+    a.users[emailToKey(ROOT_ADMIN)] = {name:'Hoàng Vinh', pass: await sha('TinPhat@2024!'), perms:{compare:true,summary:true,edit:true,admin:true}};
+    saveAuth(a);
+  }
+}
+function session(){ try{ return JSON.parse(localStorage.getItem(SESS_KEY)); }catch(e){ return null; } }
+function currentUser(){
+  const s = session(); if(!s) return null;
+  const a = loadAuth();
+  const u = a.users[s.email], d = a.devices[s.devId];
+  if(!u || !d || d.email !== s.email || !d.approved) return null;
+  return {email:s.email, perms:u.perms||{}};
+}
+const P = ()=> (currentUser()||{perms:{}}).perms;
+const canEdit = ()=> !!P().edit;
+
+async function doLogin(){
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const pass = $("loginPass").value;
+  const msg = $("loginMsg");
+  if(!email || !pass){ msg.textContent = "Nhập đủ email và mật khẩu."; return; }
+  const a = loadAuth();
+  const u = a.users[emailToKey(email)];
+  if(!u || u.pass !== await sha(pass)){ msg.textContent = "Sai email hoặc mật khẩu."; return; }
+  const devId = deviceId();
+  const d = a.devices[devId];
+  if(d && d.email === email && d.approved){
+    localStorage.setItem(SESS_KEY, JSON.stringify({email, devId}));
+    enterApp(); return;
+  }
+  a.devices[devId] = {email, name: deviceName(), approved:false, requestedAt: new Date().toLocaleString("vi-VN"), lastSeen:""};
+  saveAuth(a);
+  msg.textContent = "";
+  _pendingWait = true;
+  $("pendingPanel").classList.remove("hidden");
+  if(CLOUD){
+    $("pendingPanel").querySelector(".pp-title").textContent = "🔒 Thiết bị mới — đang chờ quản trị viên duyệt (tự vào khi được duyệt)";
+  }
+}
+async function approveHere(){
+  const ae = $("admEmail").value.trim().toLowerCase();
+  const ap = $("admPass").value;
+  const a = loadAuth();
+  const admin = a.users[ae];
+  if(!admin || admin.pass !== await sha(ap) || !admin.perms.admin){
+    $("loginMsg").textContent = "Tài khoản quản trị không hợp lệ."; return;
+  }
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const devId = deviceId();
+  Object.keys(a.devices).forEach(id=>{ if(a.devices[id].email===email && id!==devId) delete a.devices[id]; });
+  if(!a.devices[devId]) a.devices[devId] = {email, name: deviceName()};
+  a.devices[devId].approved = true;
+  a.devices[devId].approvedBy = ae;
+  a.devices[devId].approvedAt = new Date().toLocaleString("vi-VN");
+  saveAuth(a);
+  localStorage.setItem(SESS_KEY, JSON.stringify({email, devId}));
+  logHistAs(ae, `Duyệt thiết bị "${deviceName()}" cho ${email}`);
+  $("admEmail").value = $("admPass").value = "";
+  enterApp();
+}
+function doLogout(){
+  localStorage.removeItem(SESS_KEY);
+  location.reload();
+}
+function enterApp(){
+  const u = currentUser();
+  if(!u){ $("loginScreen").style.display="flex"; return; }
+  $("loginScreen").style.display="none";
+  $("userName").textContent = displayName(u.email);
+  const a = loadAuth();
+  const d = a.devices[session().devId];
+  if(d){ d.lastSeen = new Date().toLocaleString("vi-VN"); saveAuth(a); }
+  applyPerms();
+  goHome();
+  renderLastEdit();
+}
+function applyPerms(){
+  const edit = canEdit();
+  ["txtOld","txtNew"].forEach(id=>{ $(id).readOnly = !edit; });
+}
+setInterval(()=>{
+  if($("loginScreen").style.display === "none" && !currentUser()){
+    alert("Quyền truy cập của bạn đã bị thu hồi hoặc thiết bị bị đăng xuất bởi quản trị viên.");
+    doLogout();
+  }
+}, 3000);
+
+
+/* ---------- Trang chủ & điều hướng khối tính năng ---------- */
+function hideAll(){
+  ["homeScreen","nccArea","tongArea","adminArea","reportArea"].forEach(id=>$(id).classList.add("hidden"));
+  $("nccTabs").style.display="none";
+  $("btnHome").style.display="inline-block";
+}
+function goHome(){
+  hideAll();
+  $("homeScreen").classList.remove("hidden");
+  $("btnHome").style.display="none";
+  renderHome();
+}
+function renderHome(){
+  const u = currentUser(); if(!u) return;
+  const perms = u.perms;
+  $("homeWelcome").textContent = "Xin chào, " + u.email;
+  const cards = [];
+  cards.push({ok:perms.compare, icon:"📈", title:"Cập nhật giá", desc:"So sánh bảng giá 2 ngày của từng NCC: mã mới, mã bỏ, tăng/giảm giá, đổi ghi chú.", go:"goCompare()"});
+  cards.push({ok:perms.summary, icon:"📊", title:"Báo cáo tổng hợp", desc:"Tích hợp số liệu tất cả NCC: biến động mạnh, khan hàng toàn thị trường, nhận định.", go:"goSummary()"});
+  cards.push({ok:true, icon:"👤", title:"Tài khoản", desc: perms.admin ? "Thông tin, đổi mật khẩu, tạo tài khoản, cấp quyền, theo dõi hoạt động, duyệt thiết bị." : "Thông tin tài khoản và đổi mật khẩu.", go:"goAccount()"});
+  $("homeCards").innerHTML = cards.map(c=>
+    `<div class="fcard${c.ok?"":" locked"}" ${c.ok?`onclick="${c.go}"`:'title="Bạn chưa được cấp quyền tính năng này"'}>
+      <div class="fc-icon">${c.icon}</div><h3>${c.title}</h3><p>${c.desc}</p>
+      ${c.ok?"":'<p style="color:var(--up);margin-top:8px">🔒 Chưa được cấp quyền</p>'}
+    </div>`).join("");
+}
+function goCompare(){
+  if(!P().compare) return;
+  hideAll();
+  $("nccTabs").style.display="flex";
+  if(cur>=N_SLOTS) cur=0;
+  renderTabs();
+  $("nccArea").classList.remove("hidden");
+  showNcc();
+}
+function goSummary(){
+  if(!P().summary) return;
+  hideAll();
+  $("tongArea").classList.remove("hidden");
+  renderTong();
+}
+function goAccount(){
+  hideAll();
+  $("adminArea").classList.remove("hidden");
+  renderAccount();
+}
+function renderAccount(){
+  const u = currentUser(); if(!u) return;
+  const a = loadAuth();
+  const s = session();
+  const d = a.devices[s.devId] || {};
+  const permBadges = Object.keys(PERM_LABELS).filter(k=>u.perms[k])
+    .map(k=>`<span class="badge-ncc" style="background:#c9e7c9;color:#1a1a1a;border:none;font-weight:700">${PERM_LABELS[k]}</span>`).join(" ") || '<span style="color:var(--dim)">Chưa có quyền nào</span>';
+  $("myInfo").innerHTML = `
+    <div><b>Tên hiển thị:</b> <input id="myName" value="${displayName(u.email)}" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--text);padding:5px 10px;width:180px;outline:none">
+      <button class="btn-mini ok" onclick="saveMyName()">💾 Lưu tên</button></div>
+    <div><b>Email đăng nhập:</b> ${u.email} ${u.email===ROOT_ADMIN?'<span class="tag" style="background:rgba(255,184,77,.18);color:var(--accent)">TÀI KHOẢN CHỦ</span>':""}</div>
+    <div><b>Quyền được cấp:</b> ${permBadges}</div>
+    <div><b>Thiết bị này:</b> ${d.name||deviceName()} — duyệt bởi ${displayName(d.approvedBy)||"?"} lúc ${d.approvedAt||"?"}</div>`;
+  $("adminOnly").style.display = u.perms.admin ? "" : "none";
+  if(u.perms.admin) renderAdmin();
+}
+
+
+/* ---------- 6. Checklist NCC trong ngày ---------- */
+function todayStr(){ return new Date().toLocaleDateString("vi-VN"); }
+function renderCheck(){
+  const t = todayStr();
+  const list = state.map((s,i)=>({s,i})).filter(x=> x.s.old || x.s.nw || x.s.result || !/^NCC \d+$/.test(x.s.name));
+  const html = `<span style="color:var(--dim);font-size:12px">📅 Checklist hôm nay (${t}):</span> ` +
+    list.map(({s,i})=>{
+      const done = s.cmpDate === t && s.result;
+      return `<span class="dc-badge" onclick="jumpNcc(${i})" style="background:${done?'#c9e7c9':'rgba(255,107,107,.12)'};color:${done?'#14532d':'var(--up)'}">${done?'✓':'✗'} ${s.name}</span>`;
+    }).join(" ");
+  ["dayCheck","dayCheck2"].forEach(id=>{ const el=$(id); if(el) el.innerHTML = html; });
+}
+function jumpNcc(i){
+  if(!P().compare) return;
+  goCompare(); cur=i; renderTabs(); showNcc();
+}
+
+/* ---------- 7. Mã na ná giữa các NCC ---------- */
+function lev(a,b){
+  if(a===b) return 0;
+  const m=a.length,n=b.length;
+  if(Math.abs(m-n)>3) return 99;
+  const dp=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
+  for(let j=0;j<=n;j++) dp[0][j]=j;
+  for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+    dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return dp[m][n];
+}
+function computeSimilar(active){
+  const entries=[]; const setByNcc={};
+  active.forEach(s=>{
+    setByNcc[s.name]=new Set(s.result.newMap.keys());
+    s.result.newMap.forEach((v,c)=>{ if(c.length>=4) entries.push({c, n:s.name, p:v.real}); });
+  });
+  const seen=new Set(), out=[];
+  for(let i=0;i<entries.length && out.length<40;i++){
+    const A=entries[i];
+    for(let j=i+1;j<entries.length && out.length<40;j++){
+      const B=entries[j];
+      if(A.n===B.n || A.c===B.c) continue;
+      if(A.c[0]!==B.c[0]) continue;
+      if(Math.abs(A.c.length-B.c.length)>2) continue;
+      // Bỏ qua nếu mã này đã tồn tại CHÍNH XÁC ở NCC kia (không cần gợi ý)
+      if(setByNcc[B.n].has(A.c) || setByNcc[A.n].has(B.c)) continue;
+      const d = lev(A.c, B.c);
+      const sim = 1 - d/Math.max(A.c.length, B.c.length);
+      if(d>0 && sim>=0.85){
+        const key=[A.c+A.n, B.c+B.n].sort().join("|");
+        if(seen.has(key)) continue;
+        seen.add(key);
+        out.push({A,B,sim});
+      }
+    }
+  }
+  return out.sort((a,b)=>b.sim-a.sim);
+}
+function renderSimilar(active){
+  const el=$("tbSim"); if(!el) return;
+  const out = computeSimilar(active);
+  $("cntSim").textContent = out.length + (out.length>=40?"+":"") + " cặp";
+  el.innerHTML = out.map(x=>
+    `<tr><td class="code">${x.A.c}</td><td>${badge(x.A.n)} <span style="font-family:Consolas,monospace">${fmt(x.A.p)}</span></td>
+     <td class="code">${x.B.c}</td><td>${badge(x.B.n)} <span style="font-family:Consolas,monospace">${fmt(x.B.p)}</span></td>
+     <td class="num"><b style="color:var(--accent)">${Math.round(x.sim*100)}%</b></td></tr>`).join("")
+    || `<tr><td colspan="5" class="empty">Không tìm thấy cặp mã na ná nào giữa các NCC.</td></tr>`;
+}
+
+/* ---------- 5. Báo cáo ngày: biểu mẫu ảnh + Excel ---------- */
+function computeAgg(){
+  const active = state.filter(s=>s.result);
+  let vol=[];
+  active.forEach(s=>{[...s.result.up,...s.result.down].forEach(x=>{
+    if(Math.abs(x.d)>=150) vol.push({...x,ncc:s.name,pct:Math.abs(x.d)/x.oldP*100});
+  });});
+  const volMap=new Map();
+  vol.forEach(x=>{ if(!volMap.has(x.code)) volMap.set(x.code,[]); volMap.get(x.code).push(x); });
+  const groups=[...volMap.entries()].sort((a,b)=>
+    Math.max(...b[1].map(x=>Math.abs(x.d))) - Math.max(...a[1].map(x=>Math.abs(x.d))));
+  const goneMap = new Map();
+  active.forEach(s=>s.result.gone.forEach(g=>{
+    if(!goneMap.has(g.code)) goneMap.set(g.code,[]);
+    goneMap.get(g.code).push(s.name);
+  }));
+  const goneArr = [...goneMap.entries()].filter(e=>e[1].length>=2).sort((a,b)=>b[1].length-a[1].length)
+    .map(([code,nccs])=>({code, nccs, have: active.filter(s=>s.result.newMap.has(code)).map(s=>s.name)}));
+  return {active, vol, groups, goneArr};
+}
+function goReport(){
+  if(!P().summary) return;
+  const {active} = computeAgg();
+  if(!active.length){ alert("Chưa có NCC nào được phân tích hôm nay."); return; }
+  hideAll();
+  $("reportArea").classList.remove("hidden");
+  buildReport();
+}
+function pastelOf(name){ return nccColor(name); }
+function buildReport(){
+  const {active, vol, groups, goneArr} = computeAgg();
+  const rb = n => `<span class="rp-badge" style="background:${pastelOf(n)}">${n}</span>`;
+  const t = todayStr();
+  const rows = groups.slice(0,15).map(([code,arr])=>{
+    const cell=f=>arr.map(f).join("<br>");
+    return `<tr><td style="font-family:Consolas,monospace;font-weight:700">${code}</td>
+     <td>${cell(x=>rb(x.ncc))}</td>
+     <td class="num">${cell(x=>fmt(x.oldP))}</td><td class="num">${cell(x=>fmt(x.newP))}</td>
+     <td class="num">${cell(x=>`<span class="${x.d>0?'r-up':'r-down'}">${x.d>0?'▲ +':'▼ '}${fmt(x.d)}</span>`)}</td></tr>`;
+  }).join("") || `<tr><td colspan="5" style="text-align:center;color:#8a93a8;padding:14px">Không có biến động ≥ 150K</td></tr>`;
+  const goneRows = goneArr.slice(0,12).map(g=>
+    `<tr><td style="font-family:Consolas,monospace;font-weight:700">${g.code}</td>
+     <td>${g.nccs.map(rb).join("")}</td>
+     <td>${g.have.length? g.have.map(rb).join("") : '<span style="color:#8a93a8">Không NCC nào còn</span>'}</td></tr>`).join("")
+    || `<tr><td colspan="3" style="text-align:center;color:#8a93a8;padding:14px">Không có mã khan hàng (bỏ ở ≥2 NCC)</td></tr>`;
+  const ovRows = active.map(s=>{const r=s.result;return `<tr>
+    <td>${rb(s.name)} <span style="color:#8a93a8;font-size:11px">${s.lblOld||""} → ${s.lblNew||""}</span></td>
+    <td class="num">${r.oldCount} → ${r.newCount}</td>
+    <td class="num" style="color:#2563eb">${r.newCodes.length}</td>
+    <td class="num" style="color:#b45309">${r.gone.length}</td>
+    <td class="num r-up">${r.up.length}</td><td class="num r-down">${r.down.length}</td></tr>`;}).join("");
+  const upN=vol.filter(x=>x.d>0).length, downN=vol.filter(x=>x.d<0).length;
+  const insHtml = [
+    vol.length? `📊 Biến động mạnh (≥150K): <b style="color:#d63333">${upN} lượt tăng</b> / <b style="color:#1a9e50">${downN} lượt giảm</b> — xu hướng chung ${upN>downN?"<b>TĂNG</b>":upN<downN?"<b>GIẢM</b>":"đi ngang"}.`:"",
+    goneArr.length? `🚨 <b>${goneArr.length} mã</b> bị bỏ ở ≥2 NCC (khả năng khan hàng toàn thị trường).`:"",
+  ].filter(Boolean).map(x=>`<div class="rp-ins">${x}</div>`).join("") || `<div class="rp-ins">Thị trường ổn định, không có biến động đáng chú ý.</div>`;
+  const logoImg = document.querySelector(".logo-chip img");
+  $("reportCard").innerHTML = `
+    <div class="rp-head">
+      <span class="logo-chip">${logoImg?`<img src="${logoImg.src}">`:""}</span>
+      <div><h2>BÁO CÁO GIÁ NCC</h2><div class="rp-date">Ngày ${t} · ${active.length} nhà cung cấp · Đơn vị: nghìn đồng (K)</div></div>
+    </div>
+    <div class="rp-sec"><h4>Nhận định</h4>${insHtml}</div>
+    <div class="rp-sec"><h4>💥 Biến động giá mạnh (≥150K)</h4>
+      <table><thead><tr><th>Mã</th><th>NCC</th><th style="text-align:right">Giá cũ</th><th style="text-align:right">Giá mới</th><th style="text-align:right">Δ</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="rp-sec"><h4>🚫 Khan hàng (bỏ ở ≥2 NCC)</h4>
+      <table><thead><tr><th>Mã</th><th>NCC đã bỏ</th><th>NCC còn hàng</th></tr></thead><tbody>${goneRows}</tbody></table></div>
+    <div class="rp-sec"><h4>📊 Tổng quan</h4>
+      <table><thead><tr><th>NCC</th><th style="text-align:right">Tổng mã</th><th style="text-align:right">Mới</th><th style="text-align:right">Bỏ</th><th style="text-align:right">Tăng</th><th style="text-align:right">Giảm</th></tr></thead><tbody>${ovRows}</tbody></table></div>
+    <div class="rp-foot"><span>Cập Nhật Giá Tín Phát — thiết kế bởi Hoàng Vinh với Fable5</span><span>Xuất bởi ${getUser()} · ${new Date().toLocaleString("vi-VN")}</span></div>`;
+}
+function saveReportImage(){
+  if(typeof html2canvas === "undefined"){
+    alert("Không tải được thư viện chụp ảnh (kiểm tra mạng). Bạn có thể chụp màn hình biểu mẫu bên dưới."); return;
+  }
+  html2canvas($("reportCard"), {backgroundColor:"#ffffff", scale:2, useCORS:true}).then(canvas=>{
+    const a = document.createElement("a");
+    a.download = "bao_cao_gia_" + todayStr().replace(/\//g,"-") + ".png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+    logHistAs(getUser(), "Xuất báo cáo ngày dạng ảnh PNG");
+  });
+}
+async function exportReportExcel(){
+  const {active, groups, goneArr} = computeAgg();
+  const t = todayStr();
+  if(typeof ExcelJS !== "undefined"){
+    const wb = new ExcelJS.Workbook();
+    const H = {type:"pattern", pattern:"solid", fgColor:{argb:"FF1F2A5E"}};
+    const HF = {bold:true, color:{argb:"FFFFFFFF"}, size:11};
+    const styleHead = row => row.eachCell(c=>{ c.fill=H; c.font=HF; c.border={bottom:{style:"thin"}}; });
+    // Sheet 1: Tổng quan
+    const s1 = wb.addWorksheet("Tổng quan");
+    s1.addRow(["BÁO CÁO GIÁ NCC — " + t]).font = {bold:true, size:14, color:{argb:"FF1F2A5E"}};
+    s1.addRow([]);
+    styleHead(s1.addRow(["NCC","Ngày so sánh","Tổng mã (cũ→mới)","Mã mới","Mã bỏ","Tăng giá","Giảm giá","Đổi ghi chú"]));
+    active.forEach(s=>{ const r=s.result;
+      s1.addRow([s.name, (s.lblOld||"")+" → "+(s.lblNew||""), r.oldCount+" → "+r.newCount, r.newCodes.length, r.gone.length, r.up.length, r.down.length, r.noteChg.length]);
+    });
+    s1.columns.forEach(c=>c.width=16); s1.getColumn(1).width=22;
+    // Sheet 2: Biến động
+    const s2 = wb.addWorksheet("Biến động ≥150K");
+    styleHead(s2.addRow(["Mã","NCC","Giá cũ","Giá mới","Δ","%","Ghi chú"]));
+    groups.forEach(([code,arr])=>arr.forEach(x=>{
+      const row = s2.addRow([code, x.ncc, x.oldP, x.newP, x.d, +(x.pct.toFixed(1)), x.note||""]);
+      row.getCell(5).font = {bold:true, color:{argb: x.d>0?"FFD63333":"FF1A9E50"}};
+    }));
+    s2.columns.forEach(c=>c.width=14); s2.getColumn(1).width=20; s2.getColumn(7).width=30;
+    // Sheet 3: Khan hàng
+    const s3 = wb.addWorksheet("Khan hàng");
+    styleHead(s3.addRow(["Mã","NCC đã bỏ","NCC còn hàng"]));
+    goneArr.forEach(g=>s3.addRow([g.code, g.nccs.join(", "), g.have.join(", ")||"Không NCC nào còn"]));
+    s3.columns.forEach(c=>c.width=28);
+    // Sheet 4: Chi tiết từng NCC
+    const s4 = wb.addWorksheet("Chi tiết NCC");
+    active.forEach(s=>{
+      const r=s.result;
+      const title = s4.addRow([s.name + "  (" + (s.lblOld||"") + " → " + (s.lblNew||"") + ")"]);
+      title.font = {bold:true, size:12, color:{argb:"FF1F2A5E"}};
+      styleHead(s4.addRow(["Loại","Mã","Giá cũ","Giá mới","Δ","Ghi chú"]));
+      [...r.up,...r.down].forEach(x=>{
+        const row=s4.addRow([x.d>0?"TĂNG":"GIẢM", x.code, x.oldP, x.newP, x.d, x.note||""]);
+        row.getCell(1).font={bold:true,color:{argb:x.d>0?"FFD63333":"FF1A9E50"}};
+      });
+      r.newCodes.forEach(x=>s4.addRow(["MỚI", x.code, "", x.real, "", x.note||""]));
+      r.gone.forEach(x=>s4.addRow(["BỎ", x.code, x.real, "", "", x.note||""]));
+      s4.addRow([]);
+    });
+    s4.columns.forEach(c=>c.width=14); s4.getColumn(2).width=22; s4.getColumn(6).width=30;
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "bao_cao_gia_" + t.replace(/\//g,"-") + ".xlsx";
+    a.click();
+  } else {
+    // Dự phòng: xuất .xls dạng HTML có màu (Excel mở được)
+    const rb = arr => arr.join(", ");
+    let html = `<html><head><meta charset="UTF-8"></head><body>
+      <h2 style="color:#1f2a5e">BÁO CÁO GIÁ NCC — ${t}</h2>
+      <table border="1" cellspacing="0"><tr style="background:#1f2a5e;color:#fff"><th>Mã</th><th>NCC</th><th>Giá cũ</th><th>Giá mới</th><th>Δ</th></tr>`;
+    groups.forEach(([code,arr])=>arr.forEach(x=>{
+      html += `<tr><td>${code}</td><td>${x.ncc}</td><td>${x.oldP}</td><td>${x.newP}</td><td style="color:${x.d>0?'#d63333':'#1a9e50'};font-weight:bold">${x.d}</td></tr>`;
+    }));
+    html += `</table><br><table border="1" cellspacing="0"><tr style="background:#1f2a5e;color:#fff"><th>Mã khan hàng</th><th>NCC bỏ</th><th>NCC còn</th></tr>`;
+    goneArr.forEach(g=>{ html += `<tr><td>${g.code}</td><td>${rb(g.nccs)}</td><td>${rb(g.have)||"—"}</td></tr>`; });
+    html += `</table></body></html>`;
+    const blob = new Blob(["\ufeff"+html], {type:"application/vnd.ms-excel"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "bao_cao_gia_" + t.replace(/\//g,"-") + ".xls";
+    a.click();
+  }
+  logHistAs(getUser(), "Xuất báo cáo ngày ra Excel");
+}
+
+/* ---------- Admin panel ---------- */
+function showAdmin(){ goAccount(); }
+const PERM_LABELS = {compare:"So sánh giá", summary:"Báo cáo tổng hợp", edit:"Chỉnh sửa dữ liệu", admin:"Quản trị"};
+function renderAdmin(){
+  const a = loadAuth();
+  const emails = Object.keys(a.users);
+  $("cntUsers").textContent = emails.length;
+  $("tbUsers").innerHTML = emails.map((em,ix)=>{
+    const u = a.users[em];
+    const isRoot = em === ROOT_ADMIN;
+    const nPerm = Object.keys(PERM_LABELS).filter(k=>u.perms[k]).length;
+    const perms = Object.keys(PERM_LABELS).map(k=>
+      `<label class="perm-chk" style="display:inline-block;margin:4px 14px 4px 0;font-size:13px"><input type="checkbox" ${u.perms[k]?"checked":""} ${isRoot?"disabled":""}
+        onchange="admSetPerm('${em}','${k}',this.checked)" onclick="event.stopPropagation()">${PERM_LABELS[k]}</label>`).join("");
+    return `<tr style="cursor:pointer" onclick="toggleUserRow(${ix})">
+      <td><b>${u.name||em.split("@")[0]}</b>${isRoot?' <span class="tag" style="background:rgba(255,184,77,.18);color:var(--accent)">CHỦ</span>':""}
+      <div style="color:var(--dim);font-size:11.5px">${em}</div></td>
+      <td style="color:var(--dim)">${nPerm}/4 quyền · bấm để cấp quyền ▾</td>
+      <td onclick="event.stopPropagation()"><button class="btn-mini" onclick="admResetPass('${em}')">🔑 Đặt lại MK</button>
+      ${isRoot?"":`<button class="btn-mini danger" onclick="admDelUser('${em}')">✕ Xoá</button>`}</td></tr>
+    <tr class="user-detail-row hidden" id="udr${ix}"><td colspan="3">
+      <div style="color:var(--dim);font-size:12px;margin-bottom:6px">Tích ✓ vào tính năng để cấp quyền — khối tính năng sẽ hiện ngay trên trang chủ của tài khoản này:</div>
+      ${perms}</td></tr>`;
+  }).join("");
+  const devs = Object.entries(a.devices);
+  $("cntDevs").textContent = devs.length;
+  $("tbDevs").innerHTML = devs.map(([id,d])=>
+    `<tr><td><b>${displayName(d.email)}</b><div style="color:var(--dim);font-size:11px">${d.email}</div></td><td>${d.name||"?"}${id===deviceId()?' <span class="tag tag-new">máy này</span>':""}</td>
+     <td>${d.approved?`<span class="tag tag-down">Đã duyệt</span>`:`<span class="tag tag-gone">Chờ duyệt</span>`}</td>
+     <td style="color:var(--dim);font-size:12px">${d.lastSeen||d.requestedAt||""}</td>
+     <td>${d.approved?"":`<button class="btn-mini ok" onclick="admApproveDev('${id}')">✅ Duyệt</button>`}
+     <button class="btn-mini danger" onclick="admRevokeDev('${id}')">🚫 Thu hồi</button></td></tr>`).join("")
+    || `<tr><td colspan="5" class="empty">Chưa có thiết bị nào.</td></tr>`;
+}
+async function admAddUser(){
+  if(!P().admin) return;
+  const em = $("nuEmail").value.trim().toLowerCase();
+  const pw = $("nuPass").value;
+  if(!em || !pw){ alert("Nhập đủ email và mật khẩu."); return; }
+  const a = loadAuth();
+  if(a.users[em]){ alert("Email đã tồn tại."); return; }
+  const nm = $("nuName").value.trim() || em.split("@")[0];
+  a.users[em] = {name:nm, pass: await sha(pw), perms:{compare:true, summary:false, edit:false, admin:false}};
+  saveAuth(a);  // saveAuth tự encode
+  persist(`Thêm tài khoản ${nm} (${em}) — mặc định: chỉ xem cập nhật giá`);
+  $("nuName").value = $("nuEmail").value = $("nuPass").value = "";
+  renderAdmin();
+}
+function admSetPerm(em, k, val){
+  if(!P().admin || em===ROOT_ADMIN) return;
+  const a = loadAuth();
+  if(!a.users[em]) return;
+  a.users[em].perms[k] = val;
+  saveAuth(a);
+  persist(`${val?"Cấp":"Bỏ"} quyền "${PERM_LABELS[k]}" cho ${em}`);
+  const cnt = Object.keys(PERM_LABELS).filter(x=>a.users[em].perms[x]).length; // cập nhật nhãn n/4 khi render lại lần sau
+}
+async function admResetPass(em){
+  if(!P().admin) return;
+  const pw = prompt(`Mật khẩu mới cho ${em}:`);
+  if(!pw) return;
+  const a = loadAuth();
+  a.users[em].pass = await sha(pw);
+  saveAuth(a);
+  persist(`Đặt lại mật khẩu cho ${em}`);
+  alert("Đã đổi mật khẩu.");
+}
+function admDelUser(em){
+  if(!P().admin || em===ROOT_ADMIN) return;
+  if(!confirm(`Xoá tài khoản ${em}? Người này sẽ bị đăng xuất và mất quyền truy cập.`)) return;
+  const a = loadAuth();
+  delete a.users[em];
+  Object.keys(a.devices).forEach(id=>{ if(a.devices[id].email===em) delete a.devices[id]; });
+  saveAuth(a);
+  persist(`Xoá tài khoản ${em}`);
+  renderAdmin();
+}
+function admApproveDev(id){
+  if(!P().admin) return;
+  const approver = currentUser().email; // lấy trước — phòng khi duyệt thiết bị mới của chính mình
+  const a = loadAuth();
+  const d = a.devices[id]; if(!d) return;
+  Object.keys(a.devices).forEach(x=>{ if(a.devices[x].email===d.email && x!==id) delete a.devices[x]; });
+  d.approved = true; d.approvedBy = approver; d.approvedAt = new Date().toLocaleString("vi-VN");
+  saveAuth(a);
+  persist(`Duyệt thiết bị "${d.name}" cho ${d.email}`);
+  renderAdmin();
+}
+function admRevokeDev(id){
+  if(!P().admin) return;
+  const a = loadAuth();
+  const d = a.devices[id]; if(!d) return;
+  if(!confirm(`Thu hồi thiết bị "${d.name}" của ${d.email}? Họ sẽ bị đăng xuất ngay.`)) return;
+  delete a.devices[id];
+  saveAuth(a);
+  persist(`Thu hồi thiết bị "${d.name}" của ${d.email}`);
+  renderAdmin();
+}
+async function admChangeMyPass(){
+  const me = currentUser(); if(!me) return;
+  const op = $("myOldPass").value, np = $("myNewPass").value;
+  if(!op || !np){ alert("Nhập đủ mật khẩu cũ và mới."); return; }
+  const a = loadAuth();
+  if(a.users[me.email].pass !== await sha(op)){ alert("Mật khẩu hiện tại không đúng."); return; }
+  a.users[me.email].pass = await sha(np);
+  saveAuth(a);
+  persist(`${me.email} tự đổi mật khẩu`);
+  $("myOldPass").value = $("myNewPass").value = "";
+  alert("Đã đổi mật khẩu thành công.");
+}
+function saveMyName(){
+  const u = currentUser(); if(!u) return;
+  const nm = $("myName").value.trim();
+  if(!nm){ alert("Tên không được để trống."); return; }
+  const a = loadAuth();
+  const old = a.users[u.email].name || "";
+  a.users[u.email].name = nm;
+  saveAuth(a);
+  logHistAs(nm, `Đổi tên hiển thị "${old}" → "${nm}"`);
+  $("userName").textContent = nm;
+  renderLastEdit();
+  alert("Đã lưu tên hiển thị.");
+}
+function toggleUserRow(ix){ const r=$("udr"+ix); if(r) r.classList.toggle("hidden"); }
+function logHistAs(user, action){
+  try{
+    if(CLOUD){
+      HIST_CACHE.unshift({t:new Date().toLocaleString("vi-VN"), user, action});
+      HIST_CACHE = HIST_CACHE.slice(0,100);
+      db.ref("hist").set(HIST_CACHE);
+      renderLastEdit();
+      return;
+    }
+    const h = JSON.parse(localStorage.getItem(LS_HIST)||"[]");
+    h.unshift({t:new Date().toLocaleString("vi-VN"), user, action});
+    localStorage.setItem(LS_HIST, JSON.stringify(h.slice(0,100)));
+  }catch(e){}
+}
+
+/* ---------- Lưu trữ tự động (trình duyệt này) + Lịch sử ---------- */
+const LS_KEY='ssg_state_v2', LS_USER='ssg_user', LS_HIST='ssg_hist_v2';
+function emailToKey(email){ return email.replace(/[.#$/\[\]]/g, '_'); }
+function keyToEmail(key){ return key.replace(/_/g, '.'); }
+function displayName(email){ const a=loadAuth(); const u=a.users[email]; return (u&&u.name)? u.name : (email||"").split("@")[0]; }
+function getUser(){ const u = currentUser(); return u ? displayName(u.email) : "Ẩn danh"; }
+function logHist(action){ logHistAs(getUser(), action); }
+function persist(action){
+  try{
+    if(cur<N_SLOTS) saveCurrent();
+    const slim = state.map(s=>({name:s.name||"",old:s.old||"",nw:s.nw||"",lblOld:s.lblOld||"",lblNew:s.lblNew||"",rules:s.rules||[],cmpDate:s.cmpDate||""}));
+    if(CLOUD){
+      _lastStateJson = JSON.stringify(slim); // tránh listener dội ngược ghi đè chính mình
+      db.ref("state").set(slim);
+    } else {
+      localStorage.setItem(LS_KEY, JSON.stringify(slim));
+    }
+    if(action) logHist(action);
+    renderLastEdit();
+  }catch(e){ console.warn("Không lưu được:", e); }
+}
+function restore(){
+  if(CLOUD) return; // đám mây tự nạp qua listener
+  try{
+    const raw = localStorage.getItem(LS_KEY); if(!raw) return;
+    JSON.parse(raw).forEach((s,i)=>{ if(state[i]) Object.assign(state[i], s); });
+    state.forEach(s=>{ if((s.old||"").trim() && (s.nw||"").trim()) s.result = compare(s.old, s.nw, s.rules||[]); });
+  }catch(e){ console.warn("Không khôi phục được:", e); }
+}
+function histList(){
+  if(CLOUD) return HIST_CACHE;
+  try{ return JSON.parse(localStorage.getItem(LS_HIST)||"[]"); }catch(e){ return []; }
+}
+function renderLastEdit(){
+  const h = histList();
+  const el=$("lastEdit"); if(el) el.textContent = h.length? `· Sửa cuối: ${h[0].user} — ${h[0].t}` : "";
+}
+function renderHist(){
+  const el=$("tbHist"); if(!el) return;
+  try{
+    const h = histList();
+    $("cntHist").textContent = h.length;
+    el.innerHTML = h.slice(0,30).map(x=>
+      `<tr><td style="color:var(--dim);white-space:nowrap">${x.t}</td><td><b>${x.user}</b></td><td>${x.action}</td></tr>`).join("")
+      || `<tr><td colspan="3" class="empty">Chưa có chỉnh sửa nào.</td></tr>`;
+  }catch(e){}
+}
+
+/* ---------- Tabs ---------- */
+function renderTabs(){
+  const wrap = $("nccTabs"); wrap.innerHTML="";
+  const perms = P();
+  if(perms.compare) state.forEach((s,i)=>{
+    const t = document.createElement("div");
+    t.className = "ncc-tab"+(cur===i?" active":"");
+    const name = document.createElement("span");
+    name.textContent = s.name;
+    t.appendChild(name);
+    if(s.result){ const d=document.createElement("span"); d.className="dot"; t.appendChild(d); }
+    const pen = document.createElement("span");
+    pen.className="pencil"; pen.textContent="✏️"; pen.title="Đổi tên";
+    pen.onclick = e=>{
+      e.stopPropagation();
+      const inp = document.createElement("input");
+      inp.value = s.name;
+      t.replaceChild(inp, name);
+      inp.focus(); inp.select();
+      const done = ()=>{ const oldName=s.name; s.name = inp.value.trim()||("NCC "+(i+1));
+        if(oldName!==s.name) persist(`Đổi tên NCC "${oldName}" → "${s.name}"`);
+        renderTabs(); renderRulesHeader(); renderTongIfActive(); };
+      inp.onblur = done;
+      inp.onkeydown = ev=>{ if(ev.key==="Enter") inp.blur(); if(ev.key==="Escape"){inp.value=s.name;inp.blur();} };
+    };
+    t.appendChild(pen);
+    t.onclick = ()=>{ saveCurrent(); cur=i; renderTabs(); showNcc(); };
+    wrap.appendChild(t);
+  });
+}
+
+
+/* ---------- Rules UI ---------- */
+let rulesOpen = false;
+function toggleRules(){ rulesOpen=!rulesOpen; $("rulesBody").classList.toggle("hidden",!rulesOpen); $("rulesArrow").textContent = rulesOpen?"▾":"▸"; }
+function renderRulesHeader(){
+  if(cur>=N_SLOTS) return;
+  $("rulesNccName").textContent = state[cur].name;
+  const n = state[cur].rules.filter(r=>r.k).length;
+  $("rulesCnt").textContent = n? n+" quy tắc đang bật · " : "chưa có quy tắc · ";
+}
+function renderRules(){
+  if(cur>=N_SLOTS) return;
+  const tb = $("rulesRows"); tb.innerHTML="";
+  state[cur].rules.forEach((r,idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><input placeholder="VD: KM, FT50, Quà" value="${r.k||""}"></td>
+      <td><input class="rv" type="number" placeholder="100" value="${r.v??""}"></td>
+      <td><button class="rule-del" title="Xoá">✕</button></td>`;
+    const [ki,vi] = tr.querySelectorAll("input");
+    ki.oninput = ()=>{ r.k = ki.value.trim(); renderRulesHeader(); };
+    vi.oninput = ()=>{ r.v = parseFloat(vi.value)||0; };
+    ki.onchange = ()=>persist(`Sửa quy tắc ${state[cur].name}: "${r.k}" trừ ${r.v}`);
+    vi.onchange = ()=>persist(`Sửa quy tắc ${state[cur].name}: "${r.k}" trừ ${r.v}`);
+    tr.querySelector(".rule-del").onclick = ()=>{ const rk=r.k; state[cur].rules.splice(idx,1); persist(`Xoá quy tắc "${rk}" của ${state[cur].name}`); renderRules(); renderRulesHeader(); };
+    tb.appendChild(tr);
+  });
+  renderRulesHeader();
+}
+function addRule(){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; } state[cur].rules.push({k:"",v:0}); renderRules(); if(!rulesOpen) toggleRules(); }
+function copyRulesToAll(){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; }
+  const src = state[cur].rules.filter(r=>r.k);
+  if(!src.length){ alert("NCC này chưa có quy tắc nào để áp dụng."); return; }
+  if(!confirm("Ghi đè bộ quy tắc hiện tại của TẤT CẢ NCC bằng bộ quy tắc này?")) return;
+  state.forEach((s,i)=>{ if(i!==cur) s.rules = src.map(r=>({...r})); });
+  persist(`Áp dụng bộ quy tắc của ${state[cur].name} cho tất cả NCC`);
+  alert("Đã áp dụng cho tất cả NCC. Bấm ⚡ Phân tích lại tất cả để cập nhật kết quả.");
+}
+
+/* ---------- Show / save ---------- */
+function saveCurrent(){
+  if(cur>=N_SLOTS || !P().compare) return;
+  const s = state[cur];
+  s.old=$("txtOld").value; s.nw=$("txtNew").value;
+  s.lblOld=$("lblOld").value; s.lblNew=$("lblNew").value;
+}
+function showNcc(){
+  if(!P().compare) return;
+  $("homeScreen").classList.add("hidden");
+  $("nccArea").classList.remove("hidden"); $("tongArea").classList.add("hidden"); $("adminArea").classList.add("hidden");
+  const s = state[cur];
+  $("txtOld").value=s.old; $("txtNew").value=s.nw;
+  $("lblOld").value=s.lblOld; $("lblNew").value=s.lblNew;
+  renderRules(); updateFoot(); renderCheck();
+  if(s.result) renderResult(s.result); else $("resultArea").classList.add("hidden");
+}
+function showTong(){ goSummary(); }
+function renderTongIfActive(){ if(cur===N_SLOTS) renderTong(); }
+function updateFoot(){
+  ["Old","New"].forEach(k=>{
+    const p = parseList($("txt"+k).value, cur<N_SLOTS?state[cur].rules:[]);
+    const warn = p.skipped.length+p.ambiguous.length;
+    $("foot"+k).innerHTML = p.lines+" dòng · "+p.map.size+" mã" +
+      (warn? ` · <span style="color:var(--up);font-weight:700">⚠️ ${warn} dòng cần kiểm tra</span>`:"");
+  });
+}
+let _saveTimer=null;
+function autoSave(){ clearTimeout(_saveTimer); _saveTimer=setTimeout(()=>persist(null), 1500); }
+$("txtOld").addEventListener("input",()=>{updateFoot();autoSave();});
+$("txtNew").addEventListener("input",()=>{updateFoot();autoSave();});
+$("lblOld").addEventListener("input",autoSave);
+$("lblNew").addEventListener("input",autoSave);
+
+/* ---------- Nút Dán ---------- */
+async function pasteInto(id){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; }
+  try{
+    const text = await navigator.clipboard.readText();
+    if(!text){ alert("Clipboard trống."); return; }
+    $(id).value = text; updateFoot(); saveCurrent();
+    persist(`Dán bảng giá vào ${state[cur].name} (${id==='txtOld'?'ngày cũ':'ngày mới'}, ${text.split(/\r?\n/).filter(x=>x.trim()).length} dòng)`);
+  }catch(e){
+    alert("Trình duyệt chặn đọc clipboard. Hãy cho phép quyền, hoặc dán thủ công (Ctrl+V).");
+  }
+}
+function swapSides(){
+  const a=$("txtOld").value,b=$("txtNew").value;
+  $("txtOld").value=b; $("txtNew").value=a;
+  const la=$("lblOld").value,lb=$("lblNew").value;
+  $("lblOld").value=lb; $("lblNew").value=la;
+  updateFoot();
+}
+function clearCurrent(){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; }
+  $("txtOld").value=$("txtNew").value=$("lblOld").value=$("lblNew").value="";
+  state[cur].result=null; saveCurrent(); updateFoot();
+  persist(`Xoá dữ liệu NCC ${state[cur].name}`);
+  $("resultArea").classList.add("hidden"); renderTabs();
+}
+
+/* ---------- Phân tích ---------- */
+function analyze(){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; }
+  saveCurrent();
+  const s = state[cur];
+  if(!s.old.trim()||!s.nw.trim()){ alert("Cần paste đủ cả 2 bảng giá (ngày cũ + ngày mới)."); return; }
+  s.result = compare(s.old,s.nw,s.rules);
+  s.cmpDate = todayStr();
+  renderCheck();
+  persist(`So sánh ${s.name} (${s.lblOld||"?"} → ${s.lblNew||"?"}): ${s.result.up.length}↑ ${s.result.down.length}↓ ${s.result.newCodes.length} mới, ${s.result.gone.length} bỏ`);
+  renderResult(s.result); renderTabs();
+}
+function analyzeAll(){
+  if(!canEdit()){ alert("Tài khoản của bạn chỉ có quyền xem, không có quyền chỉnh sửa."); return; }
+  saveCurrent();
+  state.forEach(s=>{ if(s.old.trim()&&s.nw.trim()){ s.result=compare(s.old,s.nw,s.rules); s.cmpDate=todayStr(); } });
+  renderTabs(); renderCheck();
+  if(cur<N_SLOTS && state[cur].result) renderResult(state[cur].result);
+  else if(cur===N_SLOTS) renderTong();
+}
+
+function renderResult(r){
+  $("resultArea").classList.remove("hidden");
+  $("chips").innerHTML = `
+    <div class="chip"><div class="num">${r.oldCount} → ${r.newCount}</div><div class="lbl">Tổng mã</div></div>
+    <div class="chip c-new" onclick="scrollTo2('m-new')"><div class="num">${r.newCodes.length}</div><div class="lbl">➕ Mã mới</div></div>
+    <div class="chip c-gone" onclick="scrollTo2('m-gone')"><div class="num">${r.gone.length}</div><div class="lbl">🚫 Bỏ / hết</div></div>
+    <div class="chip c-up" onclick="scrollTo2('m-price')"><div class="num">${r.up.length}</div><div class="lbl">📈 Tăng giá</div></div>
+    <div class="chip c-down" onclick="scrollTo2('m-price')"><div class="num">${r.down.length}</div><div class="lbl">📉 Giảm giá</div></div>
+    <div class="chip c-note" onclick="scrollTo2('m-note')"><div class="num">${r.noteChg.length}</div><div class="lbl">📝 Đổi ghi chú</div></div>
+    <div class="chip c-back" onclick="scrollTo2('m-dup')"><div class="num">${r.dups.length}</div><div class="lbl">👯 Trùng nội ngày</div></div>
+    ${(function(){const n=r.issues.oldSkipped.length+r.issues.newSkipped.length+r.issues.oldAmb.length+r.issues.newAmb.length;
+      return n?`<div class="chip" onclick="scrollTo2('m-issue')" style="border-color:var(--up)"><div class="num" style="color:var(--up)">${n}</div><div class="lbl">⚠️ Cần kiểm tra</div></div>`:"";})()}`;
+  const M = $("modules"); M.innerHTML="";
+  const mod=(id,title,head,rows,emptyMsg)=>{
+    M.insertAdjacentHTML("beforeend",
+    `<div class="module" id="${id}"><h3>${title}<span class="cnt">${rows.length}</span></h3>
+     ${rows.length? `<table><thead><tr>${head}</tr></thead><tbody>${rows.join("")}</tbody></table>` : `<div class="empty">${emptyMsg}</div>`}
+     </div>`);
+  };
+  // Module ⚠️ luôn hiện đầu tiên nếu có vấn đề
+  const issueRows = [];
+  const pushIssue = (arr, side, type)=>arr.forEach(x=>issueRows.push(
+    `<tr><td>${side}</td><td>${type}</td><td class="num">${x.ln}</td><td style="font-family:Consolas,monospace;font-size:12px">${x.line.replace(/</g,"&lt;")}${x.chosen?`<div class="real-price">→ máy đã chọn giá: <b>${fmt(x.chosen)}</b> — kiểm tra xem có đúng không</div>`:""}</td></tr>`));
+  pushIssue(r.issues.oldSkipped,"Ngày cũ","Bỏ qua (không đọc được giá)");
+  pushIssue(r.issues.newSkipped,"Ngày mới","Bỏ qua (không đọc được giá)");
+  pushIssue(r.issues.oldAmb,"Ngày cũ","Nghi vấn (2 số lớn liền nhau)");
+  pushIssue(r.issues.newAmb,"Ngày mới","Nghi vấn (2 số lớn liền nhau)");
+  if(issueRows.length){
+    M.insertAdjacentHTML("beforeend",
+    `<div class="module" id="m-issue" style="border-color:var(--up)"><h3 style="color:var(--up)">⚠️ Dòng cần kiểm tra thủ công<span class="cnt">${issueRows.length}</span></h3>
+     <div class="rules-hint" style="padding:10px 16px 0">Các dòng dưới đây máy KHÔNG chắc chắn đọc đúng. Dòng "Bỏ qua" đã bị loại khỏi so sánh (có thể gây báo nhầm "Mã bị bỏ"). Dòng "Nghi vấn" vẫn được so sánh nhưng giá có thể nhận sai — hãy sửa lại dữ liệu gốc (thêm/bớt khoảng trắng) rồi bấm So sánh lại.</div>
+     <table><thead><tr><th>Bảng</th><th>Loại</th><th style="text-align:right">Dòng</th><th>Nội dung gốc</th></tr></thead><tbody>${issueRows.join("")}</tbody></table></div>`);
+  }
+  const ruleTag = x => x.hits&&x.hits.length? `<div class="real-price">quy tắc: ${x.hits.join(", ")} (niêm yết ${fmt(x.oldList)}→${fmt(x.newList)})</div>`:"";
+  const priceRows = [...r.up,...r.down].sort((a,b)=>Math.abs(b.d)-Math.abs(a.d)).map(x=>
+    `<tr><td class="code">${x.code}</td><td class="num">${fmt(x.oldP)}</td><td class="num">${fmt(x.newP)}</td>
+     <td class="num ${x.d>0?'delta-up':'delta-down'}">${x.d>0?'+':''}${fmt(x.d)}</td>
+     <td><span class="tag ${x.d>0?'tag-up':'tag-down'}">${x.d>0?'TĂNG':'GIẢM'}</span></td>
+     <td>${x.note||''}${ruleTag(x)}</td></tr>`);
+  mod("m-price","💰 Thay đổi giá (giá thực sau quy tắc)","<th>Mã</th><th style='text-align:right'>Giá cũ</th><th style='text-align:right'>Giá mới</th><th style='text-align:right'>Δ</th><th></th><th>Ghi chú</th>",priceRows,"Không có thay đổi giá.");
+  mod("m-new","➕ Mã mới","<th>Mã</th><th style='text-align:right'>Giá thực</th><th>Ghi chú</th>",
+    r.newCodes.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.real)}</td><td>${x.note||''}</td></tr>`),"Không có mã mới.");
+  mod("m-gone","🚫 Mã bị bỏ / Hết hàng","<th>Mã</th><th style='text-align:right'>Giá cuối</th><th>Ghi chú cuối</th>",
+    r.gone.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.real)}</td><td>${x.note||''}</td></tr>`),"Không có mã bị bỏ.");
+  mod("m-note","📝 Thay đổi ghi chú","<th>Mã</th><th style='text-align:right'>Giá</th><th>Ghi chú cũ</th><th>Ghi chú mới</th>",
+    r.noteChg.map(x=>`<tr><td class="code">${x.code}</td><td class="num">${fmt(x.price)}</td><td class="old-note">${x.oldNote||'(trống)'}</td><td>${x.newNote||'(trống)'}</td></tr>`),"Không có thay đổi ghi chú.");
+  mod("m-dup","👯 Trùng mã nội ngày (ngày mới)","<th>Mã</th><th>Các bản ghi</th>",
+    r.dups.map(x=>`<tr><td class="code">${x.code}</td><td>${[x.main,...x.dups].map(d=>fmt(d.price)+(d.note?" · "+d.note:"")).join("<br>")}</td></tr>`),"Không có mã trùng.");
+}
+function scrollTo2(id){ const el=$(id); if(el) el.scrollIntoView({behavior:"smooth"}); }
+
+/* ---------- Tổng hợp ---------- */
+const PASTELS=['#f9c9d4','#c9e7c9','#c9dcf9','#f9e3c0','#e3ccf2','#c0ecf2','#f6f2b8','#e0d4cc','#d9ecc0','#f2cfc0'];
+const nccColor = name => { const i=state.findIndex(s=>s.name===name); return PASTELS[(i<0?0:i)%PASTELS.length]; };
+const badge = name => `<span class="badge-ncc" style="background:${nccColor(name)};color:#1a1a1a;border:none;font-weight:700">${name}</span>`;
+
+function renderTong(){
+  const active = state.filter(s=>s.result);
+  if(!active.length){
+    $("insights").innerHTML = `<div class="empty">Chưa có NCC nào được phân tích. Vào từng tab NCC, paste 2 bảng giá và bấm "So sánh".</div>`;
+    ["tbVol","tbGoneAll","tbOverview","tbHist"].forEach(id=>{const el=$(id); if(el) el.innerHTML="";});
+    $("cntVol").textContent=$("cntGoneAll").textContent="";
+    renderHist();
+    return;
+  }
+  // ===== Biến động giá: chỉ |Δ|>=150, gộp các NCC cùng mã vào 1 dòng =====
+  let vol=[];
+  active.forEach(s=>{[...s.result.up,...s.result.down].forEach(x=>{
+    if(Math.abs(x.d)>=150) vol.push({...x,ncc:s.name,pct:Math.abs(x.d)/x.oldP*100});
+  });});
+  const volMap=new Map();
+  vol.forEach(x=>{ if(!volMap.has(x.code)) volMap.set(x.code,[]); volMap.get(x.code).push(x); });
+  const groups=[...volMap.entries()].sort((a,b)=>
+    Math.max(...b[1].map(x=>Math.abs(x.d))) - Math.max(...a[1].map(x=>Math.abs(x.d))));
+  $("cntVol").textContent = groups.length+" mã (Δ ≥ 150K)";
+  $("tbVol").innerHTML = groups.slice(0,50).map(([code,arr])=>{
+    const cell=f=>arr.map(f).join("<br>");
+    return `<tr><td class="code">${code}${arr.length>1?` <span class="tag" style="background:rgba(255,184,77,.18);color:var(--accent)">${arr.length} NCC</span>`:""}</td>
+     <td style="line-height:2">${cell(x=>badge(x.ncc))}</td>
+     <td class="num" style="line-height:2">${cell(x=>fmt(x.oldP))}</td>
+     <td class="num" style="line-height:2">${cell(x=>fmt(x.newP))}</td>
+     <td class="num" style="line-height:2">${cell(x=>`<span class="${x.d>0?'delta-up':'delta-down'}">${x.d>0?'+':''}${fmt(x.d)}</span>`)}</td>
+     <td class="num" style="line-height:2">${cell(x=>`<span class="${x.d>0?'delta-up':'delta-down'}">${x.pct.toFixed(1)}%</span>`)}</td></tr>`;
+  }).join("") || `<tr><td colspan="6" class="empty">Không có mã nào biến động ≥ 150K.</td></tr>`;
+
+  // ===== Hết hàng: chỉ mã bị bỏ ở >=2 NCC, kèm cột NCC còn hàng, mỗi mã 1 dòng =====
+  const goneMap = new Map();
+  active.forEach(s=>s.result.gone.forEach(g=>{
+    if(!goneMap.has(g.code)) goneMap.set(g.code,[]);
+    goneMap.get(g.code).push(s.name);
+  }));
+  const goneArr = [...goneMap.entries()].filter(e=>e[1].length>=2).sort((a,b)=>b[1].length-a[1].length);
+  $("cntGoneAll").textContent = goneArr.length+" mã (bỏ ở ≥2 NCC)";
+  $("tbGoneAll").innerHTML = goneArr.slice(0,60).map(([code,nccs])=>{
+    const have = active.filter(s=>s.result.newMap.has(code)).map(s=>s.name);
+    return `<tr><td class="code">${code}</td>
+     <td>${nccs.map(badge).join(" ")}</td>
+     <td>${have.length? have.map(badge).join(" ") : '<span style="color:var(--dim)">Không NCC nào còn</span>'}</td></tr>`;
+  }).join("") || `<tr><td colspan="3" class="empty">Không có mã nào bị bỏ ở từ 2 NCC trở lên.</td></tr>`;
+
+  // ===== Tổng quan từng NCC =====
+  $("tbOverview").innerHTML = active.map(s=>{
+    const r=s.result;
+    return `<tr><td>${badge(s.name)} <span style="color:var(--dim);font-size:11px">${s.lblOld||''} → ${s.lblNew||''}</span></td>
+     <td class="num">${r.oldCount}</td><td class="num">${r.newCount}</td>
+     <td class="num" style="color:var(--new)">${r.newCodes.length}</td>
+     <td class="num" style="color:var(--gone)">${r.gone.length}</td>
+     <td class="num delta-up">${r.up.length}</td><td class="num delta-down">${r.down.length}</td>
+     <td class="num" style="color:var(--note)">${r.noteChg.length}</td></tr>`;
+  }).join("");
+
+  // ===== Nhận định =====
+  const ins=[];
+  if(groups.length){
+    const [tc,ta]=groups[0]; const t=ta.reduce((m,x)=>Math.abs(x.d)>Math.abs(m.d)?x:m);
+    ins.push(`💥 Biến động lớn nhất: <b>${tc}</b> (${t.ncc}) ${t.d>0?"tăng":"giảm"} <b>${fmt(Math.abs(t.d))}K</b> (${t.pct.toFixed(1)}%).`);
+    const multi=groups.filter(g=>g[1].length>=2);
+    if(multi.length) ins.push(`🔁 <b>${multi.length} mã</b> biến động ≥150K ở nhiều NCC cùng lúc: ${multi.slice(0,6).map(g=>`<b>${g[0]}</b>`).join(", ")} — xu hướng thị trường, không phải lẻ tẻ.`);
+    const upN=vol.filter(x=>x.d>0).length, downN=vol.filter(x=>x.d<0).length;
+    ins.push(`📊 Biến động mạnh (≥150K): <b class="delta-up">${upN} lượt tăng</b> / <b class="delta-down">${downN} lượt giảm</b>.`);
+  }
+  if(goneArr.length) ins.push(`🚨 <b>${goneArr.length} mã</b> bị bỏ ở ≥2 NCC — khả năng khan hàng: ${goneArr.slice(0,5).map(g=>`<b>${g[0]}</b>`).join(", ")}${goneArr.length>5?"...":""} (xem cột "NCC còn hàng" để biết chỗ nhập).`);
+  const totalNew = active.reduce((a,s)=>a+s.result.newCodes.length,0);
+  if(totalNew) ins.push(`➕ Tổng <b>${totalNew} mã mới</b> trên ${active.length} NCC — xem chi tiết trong tab từng NCC.`);
+  $("insights").innerHTML = ins.map(i=>`<div class="insight">${i}</div>`).join("") || `<div class="empty">Chưa đủ dữ liệu để nhận định.</div>`;
+  renderSimilar(active);
+  renderCheck();
+  renderHist();
+}
+
+
+(async ()=>{
+  cloudStat("⏳ Đang kết nối...");
+  try{ await initCloud(); }catch(e){ cloudStat("⚠️ Ngoại tuyến","var(--up)"); }
+  await initAuth();
+  restore();
+  if(currentUser()) enterApp();
+  else $("loginScreen").style.display = "flex";
+  $("loginPass").addEventListener("keydown", e=>{ if(e.key==="Enter") doLogin(); });
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+</body>
+</html>
